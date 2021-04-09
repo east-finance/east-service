@@ -1,0 +1,30 @@
+image: registry.vostokservices.com/it/docker:19.03.1
+
+services:
+  - name: registry.vostokservices.com/it/docker:19.03.1-dind
+    alias: docker
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - release
+
+build_image:
+  stage: release
+  tags:
+    - wavesenterprise
+  script:
+    - docker login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}" "${REGISTRY}"
+    # Pull latest image for using cache
+    - docker pull "${REGISTRY}/vostok/${CI_PROJECT_NAME}:latest" || true
+    # Add file versions.json
+    - 'echo "{\"BUILD_ID\": ${CI_JOB_ID}, \"GIT_COMMIT\": \"${CI_COMMIT_SHA}\", \"DOCKER_TAG\": \"${CI_COMMIT_REF_NAME}\"}" > versions.json'
+    - docker build --cache-from "${REGISTRY}/vostok/${CI_PROJECT_NAME}:latest" -t "${REGISTRY}/vostok/${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME}" -t "${REGISTRY}/vostok/${CI_PROJECT_NAME}:latest" -f Dockerfile .
+    # Push images
+    - docker push "${REGISTRY}/vostok/${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME}"
+    - docker push "${REGISTRY}/vostok/${CI_PROJECT_NAME}:latest"
+  only:
+    - branches
+    - tags
