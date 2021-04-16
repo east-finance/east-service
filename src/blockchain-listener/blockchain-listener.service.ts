@@ -1,67 +1,83 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
-import { ParsedIncomingGrpcTxType } from '@wavesenterprise/js-sdk'
+import { ParsedIncomingGrpcTxType, ParsedIncomingFullGrpcTxType, TRANSACTION_TYPES, WeSdk } from '@wavesenterprise/js-sdk'
 import { GrpcListener, ConfigRpc, NodeBlock } from '@wavesenterprise/grpc-listener'
-import * as grpc from 'grpc'
+import { PersistService } from './persist.service'
+import { TransactionService } from './transactions.service'
+import { WE_SDK_PROVIDER_TOKEN } from '../common/constants'
+
+const guard = <T>(obj: any): obj is T => true
 
 @Injectable()
 export class BlockchainListenerService {
   nodeAddress: string[]
   config: ConfigRpc
   listener: GrpcListener
-  call: grpc.ClientReadableStream<any>
-
+  eastTransferAddress: string
 
   constructor (
     private readonly configService: ConfigService,
+    private readonly persistService: PersistService,
+    @Inject(WE_SDK_PROVIDER_TOKEN) private readonly weSdk: WeSdk,
+    private readonly transactionService: TransactionService,
   ) {
     const nodeAddress = this.configService.getGrpcAddresses()
     this.config = {
       addresses: nodeAddress,
       logger: {
-        info: Logger.log,
-        error: Logger.error,
-        warn: Logger.warn
+        info: Logger.log.bind(Logger),
+        error: Logger.error.bind(Logger),
+        warn: Logger.warn.bind(Logger)
       },
-      auth: {nodeApiKey: configService.envs.NODE_API_KEY},
+      auth: {
+        nodeApiKey: configService.envs.NODE_API_KEY
+      },
       asyncGrpc: false,
-      getLastBlocksSignature: this.getLastBlocksSignature
+      getLastBlocksSignature: this.persistService.getLastBlocksSignature,
+      filters: {
+        tx_types: [ 105, TRANSACTION_TYPES.Transfer ]
+      }
     }
+
+    this.eastTransferAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.NODE_PUBLIC_KEY)
   }
 
   async start() {
     this.listener = new GrpcListener(this.config)
-    await this.listener.listen(
-      this.rollbackLastBlock,
-      this.rollbackToBlockSignature,
-      this.receiveTxs,
-      this.receiveNewGrpcCall,
-      this.receiveError
-    )
+    await this.listener.listen({
+      rollbackLastBlock: this.persistService.rollbackLastBlock,
+      rollbackToBlockSignature: this.persistService.rollbackToBlockSignature,
+      receiveTxs: this.receiveTxs,
+      receiveCriticalError: this.receiveError
+    })
   }
 
   receiveTxs = async (block: NodeBlock, txs: ParsedIncomingGrpcTxType[]) => {
-    // take your txs here
-  }
+    await this.persistService.knex.transaction(async trx => {
+      // save block
+      await this.persistService.saveBlock(trx, block)
 
-  receiveNewGrpcCall = (call: grpc.ClientReadableStream<any>) => {
-    // take if you need
-    this.call = call
-  }
+      await Promise.all(txs.map(async incomingTx => {
 
-  getLastBlocksSignature = async () => {
-    // TODO
-    return Promise.resolve('test')
-  }
+        // RECEIVE CALL ORACLE CONTRACT
+        if (incomingTx.grpcType === 'executedContractTransaction' &&
+          guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(incomingTx) && incomingTx.tx) {
+          const subTx = incomingTx.tx
+          if (subTx.callContractTransaction) {
+            if (subTx.callContractTransaction.contractId === this.configService.envs.ORACLE_CONTRACT_ID) {
+              await this.persistService.saveOracle(trx, incomingTx, block)
+            }
+          }
+        }
 
-  rollbackLastBlock = async () => {
-    // TODO
-    return Promise.resolve()
-  }
-
-  rollbackToBlockSignature = async (signature: string) => {
-    // TODO
-    return Promise.resolve()
+        // RECEIVE TRANSFER - ISSUE EAST TO ADDRESS
+        if (incomingTx.grpcType === 'transferTransaction' &&
+          guard<ParsedIncomingFullGrpcTxType['transferTransaction']>(incomingTx)
+          && incomingTx.recipient === this.eastTransferAddress) {
+          await this.transactionService.issueTockens(trx, incomingTx, block)
+        }
+      }))
+    })
   }
 
   receiveError = async (err: Error) => {

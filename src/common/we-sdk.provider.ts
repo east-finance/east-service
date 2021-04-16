@@ -12,9 +12,9 @@ export const WeSdkFactory = {
     const config = {
       addresses: nodeAddress,
       logger: {
-        info: Logger.log,
-        error: Logger.error,
-        warn: Logger.warn
+        info: Logger.log.bind(Logger),
+        error: Logger.error.bind(Logger),
+        warn: Logger.warn.bind(Logger)
       },
       auth: { nodeApiKey: configService.envs.NODE_API_KEY }
     }
@@ -22,12 +22,14 @@ export const WeSdkFactory = {
     const listener = new GrpcListener(config)
     const wavesConfig = await listener.getNodeConfig()
 
+    listener.cancel()
     return create({
       initialConfiguration: {
         ...MAINNET_CONFIG,
         crypto: wavesConfig.cryptoType === 1 ? 'gost' : 'waves',
         networkByte: wavesConfig.chainId,
-        minimumFee: wavesConfig.minimumFeeMap
+        minimumFee: wavesConfig.minimumFeeMap,
+        grpcAddress: configService.getGrpcAddresses()[0]
       },
     })
   },

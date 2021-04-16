@@ -1,0 +1,31 @@
+import { Knex } from "knex";
+
+
+export async function up(knex: Knex): Promise<void> {
+    return knex.raw(`
+        CREATE TABLE blocks (
+            height         integer                     NOT NULL PRIMARY KEY,
+            timestamp      timestamp with time zone    NOT NULL,
+            generator      character varying           NOT NULL,
+            signature      character varying           NOT NULL
+        );
+
+        CREATE TABLE oracles (
+            tx_id          character varying           NOT NULL PRIMARY KEY,
+            height         integer                     NOT NULL,
+            stream_id      character varying           NOT NULL,
+            timestamp      timestamp with time zone    NOT NULL,
+            tx_timestamp   timestamp with time zone    NOT NULL,
+            executed_timestamp timestamp with time zone    NOT NULL,
+            value          numeric                     NOT NULL,
+            CONSTRAINT oracles_blocks FOREIGN KEY (height) REFERENCES blocks(height) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS oracles_timestamp ON public.oracles USING btree (timestamp);
+    `)
+}
+
+
+export async function down(knex: Knex): Promise<void> {
+}
+

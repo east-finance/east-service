@@ -1,9 +1,9 @@
 import { DynamicModule, Inject, Module, OnModuleDestroy } from '@nestjs/common'
-import { Connection } from 'typeorm'
 import { DB_CON_TOKEN } from '../common/constants'
 import { ConfigModule } from '../config/config.module'
 import { ConfigService } from '../config/config.service'
 import { pgProviders } from './pg.providers'
+import { Knex } from 'knex'
 
 @Module({
   imports: [ConfigModule],
@@ -25,9 +25,9 @@ export class DatabaseModule implements OnModuleDestroy {
       exports: pgProviders,
     }
   }
-  constructor (@Inject(DB_CON_TOKEN) private readonly dbConnection: Connection) {}
+  constructor (@Inject(DB_CON_TOKEN) private readonly dbConnection: Knex) {}
 
   onModuleDestroy (): void {
-    this.dbConnection.close()
+    this.dbConnection.destroy()
   }
 }

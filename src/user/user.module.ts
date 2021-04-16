@@ -1,10 +1,9 @@
 import { Logger, Module } from '@nestjs/common'
 import { WeSdkFactory } from '../common/we-sdk.provider'
 import { ConfigService } from '../config/config.service'
-import { BlockchainListenerService } from './blockchain-listener.service'
-import { PersistService } from './persist.service'
-import { TransactionService } from './transactions.service'
+import { UserService } from './user.service'
 import { DatabaseModule } from '../database/database.module'
+import { UserController } from './user.controller'
 
 
 @Module({
@@ -12,11 +11,9 @@ import { DatabaseModule } from '../database/database.module'
     ConfigService,
     Logger,
     WeSdkFactory,
-    BlockchainListenerService,
-    PersistService,
-    TransactionService
   ],
   imports: [DatabaseModule.forRoot()],
-  exports: [BlockchainListenerService]
+  controllers: [UserController],
+  exports: [UserService]
 })
 export class BlockchainListenerModule {}
