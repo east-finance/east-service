@@ -64,10 +64,5 @@
     "arrowParens": "always",
     "tabWidth": 2,
     "useTabs": false
-  },
-  "husky": {
-    "hooks": {
-      "pre-push": "npm run build:check && npm test"
-    }
   }
 }
