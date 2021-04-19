@@ -22,13 +22,18 @@ export const WeSdkFactory = {
     const listener = new GrpcListener(config)
     const wavesConfig = await listener.getNodeConfig()
 
+    const minimumFee = wavesConfig.minimumFeeMap.reduce((res: any, curr: any) => {
+      res[parseInt(curr[0])] = parseFloat(curr[1])
+      return res
+    }, {})
+
     listener.cancel()
     return create({
       initialConfiguration: {
         ...MAINNET_CONFIG,
         crypto: wavesConfig.cryptoType === 1 ? 'gost' : 'waves',
         networkByte: wavesConfig.chainId,
-        minimumFee: wavesConfig.minimumFeeMap,
+        minimumFee,
         grpcAddress: configService.getGrpcAddresses()[0]
       },
     })

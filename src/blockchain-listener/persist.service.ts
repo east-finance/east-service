@@ -14,6 +14,17 @@ export class PersistService {
     @Inject(DB_CON_TOKEN) readonly knex: Knex
   ) {}
 
+
+  async getTransactionByReuestId(id: string, sqlTx?: any) {
+    const transaction = await (sqlTx || this.knex)('transactions')
+      .select('*')
+      .where('request_tx_id', id)
+    if (transaction && transaction.length) {
+      return transaction[0]
+    }
+  }
+
+
   async getLastOracles(sqlTx: any, blockTimestamp: number) {
     const [ west ] = await (sqlTx || this.knex)('oracles')
       .select('*')

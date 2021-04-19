@@ -1,8 +1,9 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common'
+import { Controller, Get, UseGuards, Query } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
+import { TransactionsResponseDto, TransactionsQuery } from './entities/Transactions'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -13,8 +14,10 @@ export class UserController {
     private readonly userService: UserService,
   ) {}
 
-  @Get('/init-order')
-  async getMe(@AuthUser() user: IAuthUser) {
-    return this.userService.initOrder(user)
+  @Get('/transactions')
+  @ApiOkResponse({ type: TransactionsResponseDto })
+  async getMe(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
+    return this.userService.getTransactions(address, limit, offset)
   }
 }
+

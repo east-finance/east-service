@@ -55,28 +55,38 @@ export class BlockchainListenerService {
   receiveTxs = async (block: NodeBlock, txs: ParsedIncomingGrpcTxType[]) => {
     await this.persistService.knex.transaction(async trx => {
       // save block
-      await this.persistService.saveBlock(trx, block)
+      try {
+        await this.persistService.saveBlock(trx, block)
 
-      await Promise.all(txs.map(async incomingTx => {
-
-        // RECEIVE CALL ORACLE CONTRACT
-        if (incomingTx.grpcType === 'executedContractTransaction' &&
-          guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(incomingTx) && incomingTx.tx) {
-          const subTx = incomingTx.tx
-          if (subTx.callContractTransaction) {
-            if (subTx.callContractTransaction.contractId === this.configService.envs.ORACLE_CONTRACT_ID) {
-              await this.persistService.saveOracle(trx, incomingTx, block)
+        for (const index in txs) {
+          const incomingTx = txs[index]
+          // RECEIVE CALL ORACLE CONTRACT
+          if (incomingTx.grpcType === 'executedContractTransaction' &&
+            guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(incomingTx) && incomingTx.tx) {
+            const subTx = incomingTx.tx
+            if (subTx.callContractTransaction) {
+              if (subTx.callContractTransaction.contractId === this.configService.envs.ORACLE_CONTRACT_ID) {
+                await this.persistService.saveOracle(trx, incomingTx, block)
+              }
+              
+              if (subTx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID) {
+                await this.transactionService.receiveCallEastContract(trx, incomingTx, block)
+              }
             }
           }
-        }
 
-        // RECEIVE TRANSFER - ISSUE EAST TO ADDRESS
-        if (incomingTx.grpcType === 'transferTransaction' &&
-          guard<ParsedIncomingFullGrpcTxType['transferTransaction']>(incomingTx)
-          && incomingTx.recipient === this.eastTransferAddress) {
-          await this.transactionService.issueTockens(trx, incomingTx, block)
+          // RECEIVE TRANSFER - ISSUE EAST TO ADDRESS
+          if (incomingTx.grpcType === 'transferTransaction' &&
+            guard<ParsedIncomingFullGrpcTxType['transferTransaction']>(incomingTx)
+            && incomingTx.recipient === this.eastTransferAddress) {
+            await this.transactionService.issueTockens(trx, incomingTx, block)
+          }
         }
-      }))
+      } catch(err) {
+        if (!this.configService.envs.IS_DEV_ENVIRONMENT) {
+          throw err
+        }
+      }
     })
   }
 

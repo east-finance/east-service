@@ -24,7 +24,6 @@ const envs = {
   POSTGRES_PORT: process.env.POSTGRES_PORT || '5432',
   POSTGRES_HOST: process.env.POSTGRES_HOST || '127.0.0.1',
   PG_SSL_CERT_FILE_PATH: process.env.PG_SSL_CERT_FILE_PATH,
-  SWAGGER_BASE_PATH: process.env.SWAGGER_BASE_PATH || '/docs',
   NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '51.178.69.186:6865',
   NODE_API_KEY: process.env.NODE_API_KEY || 'vostok',
   NODE_PUBLIC_KEY: process.env.NODE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
@@ -49,6 +48,9 @@ const envs = {
   // east collateral
   EAST_USDP_PART: process.env.EAST_USDP_PART ? parseFloat(process.env.EAST_USDP_PART) : 0.5,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
+
+  // IS_DEV
+  IS_DEV_ENVIRONMENT: process.env.IS_DEV_ENVIRONMENT && process.env.IS_DEV_ENVIRONMENT === 'true' || true,
 }
 
 export class ConfigService {
@@ -106,10 +108,6 @@ export class ConfigService {
     return {
       version,
     }
-  }
-
-  isDev () {
-    return process.env.NODE_ENV !== 'production'
   }
 
   getKeyPair() {

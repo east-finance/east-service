@@ -31,15 +31,11 @@ async function bootstrap () {
     'APP',
   )
 
-  setupSwagger(
-    app,
-    configService.envs.SWAGGER_BASE_PATH,
-    configService.isDev(),
-    configService.getVersionInfo()
-  )
+  setupSwagger(app, configService.getVersionInfo())
 
   const blockchainListenerService = app.get(BlockchainListenerService)
   await blockchainListenerService.start()
+  await app.listen(3000)
 }
 
 bootstrap().catch((err) => {

@@ -5,17 +5,14 @@ import { validationMetadatasToSchemas } from 'class-validator-jsonschema'
 
 export function setupSwagger(
   app: INestApplication,
-  basePath: string,
-  isDev: boolean,
   versionInfo: { version: string },
 ) {
   const options = new DocumentBuilder()
-    .setTitle('Waves Enterprise deponent service')
-    .setDescription('Deponent service API')
+    .setTitle('Waves Enterprise east service')
+    .setDescription('Waves Enterprise service API')
     .setVersion(versionInfo.version)
     .addServer(`http://`)
     .addServer(`https://`)
-    .setBasePath(basePath)
     .addBearerAuth()
     .build()
 
@@ -27,5 +24,5 @@ export function setupSwagger(
     ...validationMetadatasToSchemas(metadata),
   }
 
-  SwaggerModule.setup('/docs', app, document)
+  SwaggerModule.setup('/', app, document)
 }

@@ -6,6 +6,7 @@ import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { PersistService } from './persist.service'
 
+const WEST_DECIMALS = 8
 
 @Injectable()
 export class TransactionService {
@@ -23,8 +24,34 @@ export class TransactionService {
     this.usdpPartInPosition = EAST_USDP_PART / ((1 - EAST_USDP_PART) * EAST_WEST_COLLATERAL + EAST_USDP_PART)
   }
 
+  async receiveCallEastContract(sqlTx: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+    if (call.tx.callContractTransaction && call.tx.callContractTransaction.senderPublicKey === this.configService.envs.NODE_PUBLIC_KEY) {
+      const mintParam = call.tx.callContractTransaction.paramsList?.find(param => param.key === 'mint')
+      const mintVal = JSON.parse(mintParam.value)
+      if (mintParam) {
+        await sqlTx('executed_transactions').insert({
+          tx_id: call.tx.callContractTransaction.id,
+          address: mintVal.address,
+          executed_tx_id: call.id,
+          height: block.height,
+          timestamp: new Date(),
+          call_timestamp: new Date(call.tx.callContractTransaction.timestamp as any),
+          executed_timestamp: new Date(call.timestamp as any),
+        })
+      }
+    }
+  }
+
   async issueTockens(sqlTx: any, transfer: ParsedIncomingFullGrpcTxType['transferTransaction'], block: NodeBlock) {
     const { west, usdp } = await this.persistService.getLastOracles(sqlTx, block.timestamp)
+    
+    const oldTx = await this.persistService.getTransactionByReuestId(transfer.id, sqlTx)
+    if (oldTx) {
+      Logger.error(`Tx already exists for request: ${transfer.id}`)
+      if (!this.configService.envs.IS_DEV_ENVIRONMENT) {
+        process.exit(1)
+      }
+    }
 
     // CHECK LAST VALUE TIMESTAMP
     // TODO ask about const now = Date.now()
@@ -39,7 +66,7 @@ export class TransactionService {
     }
 
     // calculate amount
-    const transferAmount = parseFloat(transfer.amount + '')
+    const transferAmount = parseFloat(transfer.amount + '') / Math.pow(10, WEST_DECIMALS)
     const westToUsdpAmount = this.usdpPartInPosition * transferAmount
     const eastAmount = (westToUsdpAmount / west.value) / this.configService.envs.EAST_USDP_PART
     const usdpAmount = westToUsdpAmount / west.value * usdp.value
@@ -58,8 +85,6 @@ export class TransactionService {
     const callBody = {
       contractId: this.configService.envs.EAST_CONTRACT_ID,
       contractVersion: 1,
-      // TODO
-      fee: 0,
       timestamp: Date.now(),
       params: [
         {
@@ -88,7 +113,8 @@ export class TransactionService {
       tx_id: await dockerCall.getId(),
       height: block.height,
       request_tx_id: transfer.id,
-      timestamp: new Date(transfer.timestamp as any),
+      request_timestamp: new Date(transfer.timestamp as any),
+      timestamp: new Date(),
       transaction_type: 'issue',
       amount: eastAmount,
       address,

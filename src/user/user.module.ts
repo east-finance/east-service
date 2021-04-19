@@ -1,19 +1,31 @@
 import { Logger, Module } from '@nestjs/common'
 import { WeSdkFactory } from '../common/we-sdk.provider'
 import { ConfigService } from '../config/config.service'
+import { ConfigModule } from '../config/config.module'
 import { UserService } from './user.service'
 import { DatabaseModule } from '../database/database.module'
 import { UserController } from './user.controller'
-
+import { jwtFactory } from '../common/jwt.factory'
+import { JwtStrategy } from '../common/jwt.strategy'
+import { JwtModule } from '@nestjs/jwt'
 
 @Module({
   providers: [
     ConfigService,
     Logger,
     WeSdkFactory,
+    UserService,
+    JwtStrategy,
   ],
-  imports: [DatabaseModule.forRoot()],
+  imports: [
+    DatabaseModule.forRoot(),
+    JwtModule.registerAsync({
+      imports: [ ConfigModule ],
+      useFactory: jwtFactory,
+      inject: [ConfigService],
+    })
+  ],
   controllers: [UserController],
   exports: [UserService]
 })
-export class BlockchainListenerModule {}
+export class UserModule {}
