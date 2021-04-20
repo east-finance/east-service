@@ -25,7 +25,6 @@ RUN apk update && apk add --no-cache bash curl
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY package.json /app
-COPY ormconfig.js /app
 
 EXPOSE 3000
 CMD npm start
