@@ -5,10 +5,7 @@ function actWithDb(action: 'create' | 'drop', dbName: string) {
     return new Promise((resolve, reject) => {
         const cfg = new ConfigService('postgres')
         const pgOptions = cfg.getPgOptions()
-        const client = new Client({
-            ...pgOptions,
-            user: pgOptions.username,
-        })
+        const client = new Client(pgOptions)
         // disconnect client when all queries are finished
         client.on('drain', client.end.bind(client))
         client.on('error', reject)
