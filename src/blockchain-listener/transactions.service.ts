@@ -1,10 +1,11 @@
 import { Injectable, Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
-import { DB_CON_TOKEN, WE_SDK_PROVIDER_TOKEN } from '../common/constants'
+import { DB_CON_TOKEN, WE_SDK_PROVIDER_TOKEN, TxTypes, Operations, TxStatuses, StateKeys, Tables } from '../common/constants'
 import { ParsedIncomingFullGrpcTxType, WeSdk } from '@wavesenterprise/js-sdk'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { PersistService } from './persist.service'
+import { VaultService } from './vault.service'
 
 const WEST_DECIMALS = 8
 
@@ -17,7 +18,8 @@ export class TransactionService {
     private readonly configService: ConfigService,
     @Inject(WE_SDK_PROVIDER_TOKEN) private readonly weSdk: WeSdk & {minimumFee: any},
     @Inject(DB_CON_TOKEN) readonly knex: Knex,
-    private readonly persistService: PersistService
+    private readonly persistService: PersistService,
+    private readonly vaultService: VaultService
   ) {
     this.maxDiff = this.configService.envs.EXPIRED_ORACLE_DATA
     const { EAST_USDP_PART, EAST_WEST_COLLATERAL } = this.configService.envs
@@ -25,19 +27,42 @@ export class TransactionService {
   }
 
   async receiveCallEastContract(sqlTx: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    if (call.tx.callContractTransaction && call.tx.callContractTransaction.senderPublicKey === this.configService.envs.NODE_PUBLIC_KEY) {
-      const mintParam = call.tx.callContractTransaction.paramsList?.find(param => param.key === 'mint')
-      const mintVal = JSON.parse(mintParam.value)
-      if (mintParam) {
-        await sqlTx('executed_transactions').insert({
-          tx_id: call.tx.callContractTransaction.id,
-          address: mintVal.address,
-          executed_tx_id: call.id,
-          height: block.height,
-          timestamp: new Date(),
-          call_timestamp: new Date(call.tx.callContractTransaction.timestamp as any),
-          executed_timestamp: new Date(call.timestamp as any),
-        })
+    if (call.tx.callContractTransaction && call.tx.callContractTransaction.senderPublicKey === this.configService.envs.EAST_SERVICE_PUBLIC_KEY) {
+      const firstParam = call.tx.callContractTransaction.paramsList && call.tx.callContractTransaction.paramsList[0]
+      if (!firstParam) return;
+      const parsed = JSON.parse(firstParam.value)
+      switch (firstParam.key) {
+
+        case Operations.mint:
+          // save tx
+          await sqlTx(Tables.TransactionsLog).insert({
+            tx_id: call.tx.callContractTransaction.id,
+            status: TxStatuses.Executed,
+            type: TxTypes.Issue,
+            height: block.height,
+            executed_tx_id: call.id,
+            tx_timestamp: call.tx.callContractTransaction.timestamp,
+            created_at: new Date(),
+            address: parsed.address,
+          })
+
+          // save vault
+          const vaultInfo = call.resultsList?.find(res => res.key === `${StateKeys.vault}_${call.tx.callContractTransaction.id}`)
+          const vaultParsed = JSON.parse(vaultInfo.value)
+          await this.vaultService.createVault(call.tx.callContractTransaction.id, vaultParsed, sqlTx)
+          
+          // save balance
+          const balanceInfo = call.resultsList?.find(res => res.key === `${StateKeys.balance}_${parsed.address}`)
+          const balanceParsed = JSON.parse(balanceInfo.value)
+          await sqlTx(Tables.BalanceLog).insert({
+            tx_id: call.tx.callContractTransaction.id,
+            address: parsed.address,
+            east_amount: balanceParsed
+          })
+          break;
+        default:
+          Logger.warn(`Unknown east contract params: ${firstParam}`)
+          break;
       }
     }
   }
@@ -45,7 +70,7 @@ export class TransactionService {
   async issueTockens(sqlTx: any, transfer: ParsedIncomingFullGrpcTxType['transferTransaction'], block: NodeBlock) {
     const { west, usdp } = await this.persistService.getLastOracles(sqlTx, block.timestamp)
     
-    const oldTx = await this.persistService.getTransactionByReuestId(transfer.id, sqlTx)
+    const oldTx = await this.persistService.getTransactionByRequestId(transfer.id, sqlTx)
     if (oldTx) {
       Logger.error(`Tx already exists for request: ${transfer.id}`)
       if (!this.configService.envs.IS_DEV_ENVIRONMENT) {
@@ -105,18 +130,19 @@ export class TransactionService {
 
     const dockerCall = this.weSdk.API.Transactions.CallContract.V4(callBody)
     await dockerCall.broadcastGrpc({
-      privateKey: this.configService.envs.NODE_PRIVATE_KEY,
-      publicKey: this.configService.envs.NODE_PUBLIC_KEY,
+      privateKey: this.configService.envs.EAST_SERVICE_PRIVATE_KEY,
+      publicKey: this.configService.envs.EAST_SERVICE_PUBLIC_KEY,
     })
 
-    await sqlTx('transactions').insert({
+    await sqlTx(Tables.TransactionsLog).insert({
       tx_id: await dockerCall.getId(),
+      status: TxStatuses.Init,
+      type: TxTypes.Issue,
       height: block.height,
       request_tx_id: transfer.id,
-      request_timestamp: new Date(transfer.timestamp as any),
-      timestamp: new Date(),
-      transaction_type: 'issue',
-      amount: eastAmount,
+      request_tx_timestamp: new Date(transfer.timestamp as any),
+      tx_timestamp: dockerCall.timestamp,
+      created_at: new Date(),
       address,
       info,
     })

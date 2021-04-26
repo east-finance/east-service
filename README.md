@@ -1,40 +1,122 @@
 # DEPONENT
 
-### Envs:
+## Описание [EAST смарт контракта](https://gitlab.wvservices.com/waves-enterprise/east-contract)
 
-POSTGRES_USER  
-POSTGRES_PASSWORD  
-POSTGRES_DB  
-POSTGRES_PORT  
-POSTGRES_HOST
+### Методы контракта:
+Метод = ключ параметра вызова контракта.
+#### mint
+<b> Описание: </b>
+Создаёт vault для пользователя с указанным колличеством токенов. Добавляет на баланс пользователя EAST токенов. Дополнительным параметром вызова передаются id транзакций ораклов использовавшихся для расчётов.
+<b> Кто может вызвать: </b>
+Только создатель контракта
+<b>Триггеры: </b>
+Пользователь делает transfer с WEST токенами на адрес владельца EAST контракта, после появления транзакции в блокчейне сервис автоматизации расчитывает количество EAST токенов и вызывает данный метод
+<b>Тело метода: </b>
+```js
+  address: string,
+  eastAmount: number, // колличество EAST токенов обеспеченных данной позицией
+  westAmount: number, // колличество замороженных WEST токенов
+  usdpAmount: number, // колличество замороженных USDP токенов
+```
+<b>Результат выполнения: </b>
+- добавляет ключ `vault_${tx.id}` хранит в себе информацию о vault пользователя c указанным адресом, vault id = transaction.id
+- добавляет ключ `balance_${address}` хранит в себе колличество EAST токенов для адреса
+- обновляет значение ключа `total_supply`
 
-PORT: process.env.PORT || '3000',
-POSTGRES_USER: process.env.POSTGRES_USER || 'postgres',
-POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD || '123456',
-POSTGRES_DB: process.env.POSTGRES_DB || 'deponent',
-POSTGRES_PORT: process.env.POSTGRES_PORT || '5432',
-POSTGRES_HOST: process.env.POSTGRES_HOST || '127.0.0.1',
-AUTH_URL: process.env.AUTH_URL || 'http://127.0.0.1:3001',
-SWAGGER_BASE_PATH: process.env.SWAGGER_BASE_PATH || '/docs',
-MAIL_PORT: process.env.MAIL_PORT || '587',
-MAIL_USER: process.env.MAIL_USER || 'some@ema.il',
-MAIL_PASSWORD: process.env.MAIL_PASSWORD || 'some_strong_password',
-MAIL_HOST: process.env.MAIL_HOST || 'mail.waves.work',
-PAYMENT_PUBLIC_ID: process.env.PAYMENT_PUBLIC_ID || 'pk_59e080d79c5230975afed3cb4076d',
-PAYMENT_API_SECRET: process.env.PAYMENT_API_SECRET || 'e0928c8da3b2ef8448f02ede1d7f39b3',
-PAYMENT_API_URL: 'https://api.cloudpayments.ru',
-DEPONENT_PRICE: process.env.DEPONENT_PRICE || 100,
-S3_ID_KEY: process.env.S3_KEY_ID || 'AKIAJWXXK3NP3BM32OEA',
-S3_SECRET_KEY: process.env.S3_SECRET_KEY || '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',
-S3_BUCKET: process.env.S3_BUCKET?.trim() || 'deponent-test',
-S3_URL_EXPIRATION: process.env.S3_URL_EXPIRATION || 60 \* 60, // in seconds
-S3_REGION: process.env.S3_REGION || 'eu-central-1',
-DEPONENT_SITE_URL: process.env.DEPONENT_SITE_URL || 'https://deponent.hoover.welocal.dev',
-NODE_ADDRESS: process.env.NODE_ADDRESS || 'https://hoover.welocal.dev/nodeAddress',
-NODE_PUBLIC_KEY: process.env.NODE_PUBLIC_KEY || 'AYgataydtcjocJvNKCkiUF8yHZ4dQ48HzMJKS9YAPJyv',
-NODE_PRIVATE_KEY: process.env.NODE_PRIVATE_KEY || '4GPuAPGTVpsACgUfqEJ7Fn8p4EpyKjUNoa79bTgmBpHF',
-FILE_REMOVE_TIMEOUT: process.env.FILE_REMOVE_TIMEOUT
+#### transfer
+<b> Описание: </b>
+Перевод указанного количества EAST на указанный адрес
+<b> Кто может вызвать: </b>
+Только владелец EAST токенов
+<b>Тело метода: </b>
+```js
+  to: string, // получатель
+  eastAmount: number
+```
+<b>Результат выполнения: </b>
+- обновляет значения ключей балансов `balance_${address}` для отправителя и получателя
 
-IS_MAIL_TRANSPORT_ENABLED
-IS_MAIL_SECURE
-POSTGRES_ENABLE_SSL
+#### burn
+<b> Описание: </b>
+Закрывает vault пользователя, сжигает EAST токены, сервис автоматизации возвращает пользователю WEST и USDP
+<b> Кто может вызвать: </b>
+Владелец позиции(vault). Необходимо условие - transaction.sender = vault.address 
+<b>Триггеры: </b>
+Пользователь вызывает контракт, после его выполения - сервис автоматизации возвращает пользователю WEST и USDP токены по адресу из vault
+<b>Тело метода: </b>
+```js
+  vault: string, // vault id
+```
+<b>Результат выполнения: </b>
+- обновляет значениe ключа `balance_${address}`, если баланса EAST меньше чем vault.eastAmount то операция не выполняется 
+- обновляет значение ключа `total_supply`
+- удаляет ключ `vault_${vault.id}` хранившего в себе информацию о vault
+
+#### recalculate_execute
+<b> Описание: </b>
+Изменяет колличество токенов в обеспечении либо EAST токенов в записимости от триггера. Дополнительным параметром вызова передаются id транзакций ораклов использовавшихся для расчётов.
+<b> Кто может вызвать: </b>
+Только создатель контракта
+<b>Триггеры: </b>
+- для дообеспечения позиции пользователь делает transfer с WEST токенами на адрес владельца EAST контракта с приложением: attachment = supply, после появления транзакции в блокчейне сервис автоматизации добавляет сумму перевода к уже имеющимся в обеспечении и вызывает данный метод.(обновляется только westAmount)
+- для выпуска дополнительных EAST токенов пользователь вызывает контракт с параметром recalculate_init и значением vault.id. После появления транзакции в блокчейне, случае если стоимость токена выросла то сервис автоматизации перерасчитывает значения usdpAmount и eastAmount так чтобы обеспечение опять стало 250% и вызывает данный метод. Вторым параметром прикрепляются id ораклов использовавшихся для расчёта.
+- Если обеспечение WEST падает менее 120% то сервис атоматизации использует WEST для покупки USDP и выставляет в vault значения usdpAmount = eastAmount, westAmount = 0.(TODO)
+<b>Тело метода: </b>
+```js
+  eastAmount?: number, // новое колличество EAST токенов обеспеченных данной позицией
+  westAmount?: number, // новое колличество замороженных WEST токенов
+  usdpAmount?: number, // новое колличество замороженных USDP токенов
+  vault: string // vault id
+```
+<b>Результат выполнения: </b>
+- обновляет ключ `vault_${vault.id}` хранит в себе информацию о vault
+- обновляет ключ `balance_${address}` если есть разница между старым и новым значением eastAmount
+- обновляет значение ключа `total_supply` если есть разница между старым и новым значением eastAmount
+
+#### recalculate_init
+<b> Описание: </b>
+Используется пользователем для пересчёта позиции и выпуска дополнительных EAST токенов (в случае роста курса WEST токена)
+<b> Кто может вызвать: </b>
+Владелец позиции(vault). Необходимо условие - transaction.sender = vault.address 
+<b>Триггеры: </b>
+Пользователь вызывает контракт, после его выполения - сервис автоматизации перерасчитывает значения usdpAmount и eastAmount так чтобы обеспечение опять стало 250% и вызывает метод recalculate_execute для обновления vault пользователя
+<b>Тело метода: </b>
+```js
+  vault: string, // vault id
+```
+<b>Результат выполнения: </b>
+- обновляет значениe ключа `balance_${address}` содержащего баланс EAST пользователя
+- обновляет значение ключа `total_supply`
+- удаляет ключ `vault_${vault.id}` хранившего в себе информацию о vault
+
+
+
+## Логика работы без технических деталей:
+
+### Покупка и сопровождение EAST токенов
+1. Для покупки EAST пользователь отправляет трансфер с WEST на единый адрес(EAST_SERVICE_PUBLIC_KEY). Адрес этот не меняется для прозрачности сделок.
+
+2. При появлении трансфера в блокчейне сервис автоматизации берёт транзакции ораклов наиболее близкие по времени к времени трансфера. Для того чтобы использовать ораклы для расчёта колличества EAST разница между времени блока (block.timestamp) и oracle_data.timestamp не должна превышать константу EXPIRED_ORACLE_DATA.
+    вопросы: 
+    2.1. в случае неудовлетворения условий - возвращать деньги обратным трансфером?? в данный момент сервис просто падает и не встаёт. TODO
+    2.2. гипотетически обработка блокчейна может затянуться, курс может измениться. есть вариант брать курс из последних ораклов??(нечестно по отошению к пользователю), в этом случае oracle_data.timestamp не должен отставать от текущего времени более чем на EXPIRED_ORACLE_DATA. Либо все исторические трансферы отправлять обратно пользователю.
+
+3. Сервис автоматизации расчитывает количество EAST используя ораклы из пункта 2. вызывает east контракт c ключом mint, отправляет:
+    - количество купленых истов
+    - количество USDP и WEST для vault пользователя
+    - id транзакций ораклов использовавшихся для расчёта и биржевые курсы из данных ораклов.
+    - адрес пользователя из трансфера
+С ключом mint может вызывать данный контракт только его создатель.
+
+4. Контракт добавляет в свой стэйт пользователю токенов EAST. Так же конракт создаёт vault для пользователся с указанным количеством токенов (не реализовано в данный момент на стороне контракта).
+    вопросы: 
+    4.1 в качестве id для vault пользователя предлагаю взять id самой транзакции docker call?
+    4.2 поскольку мы передаём id транзакций ораклов то гипотетически мы можем расчитывать количество EAST на стороне контракта а не в сервисе автоматизации.??
+
+// далее ещё не реализовано
+
+5. Пользователь для дообеспечения своего vault переводит токенов на единый адрес EAST_SERVICE_PUBLIC_KEY где в сообщении указывает ID своего vault, при получении трансфера сервис автоматизации в свою очередь отправляет docker call с суммой перевода, контракт пополняет vault.
+
+6. Для ликвидации позиции(vault) пользователь отправляет docker call с запросом на ликвидацию, сервис автоматизации при получении запроса отправляет атомиком пользователю трансферы с USPD, WEST и docker call с ликвидацией позиции, контракт удаляет vault и снимает со счёта пользователя EAST.
+    вопрос:
+    6.1 на груминге говорили что то про то что не нужна ликвидация??

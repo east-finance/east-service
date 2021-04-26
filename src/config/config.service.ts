@@ -26,8 +26,8 @@ const envs = {
   PG_SSL_CERT_FILE_PATH: process.env.PG_SSL_CERT_FILE_PATH,
   NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '51.178.69.186:6865',
   NODE_API_KEY: process.env.NODE_API_KEY || 'vostok',
-  NODE_PUBLIC_KEY: process.env.NODE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
-  NODE_PRIVATE_KEY: process.env.NODE_PRIVATE_KEY || 'DRhyQvDKvaJeuMbhQR9gdyT8dMyoaHry23SifTNhN1qf',
+  EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
+  EAST_SERVICE_PRIVATE_KEY: process.env.EAST_SERVICE_PRIVATE_KEY || 'DRhyQvDKvaJeuMbhQR9gdyT8dMyoaHry23SifTNhN1qf',
 
   // AUTH
   AUTH_URL,
@@ -39,11 +39,11 @@ const envs = {
   // oracle contract id
   ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV',
   // east contract id
-  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'J15gUR1azaXgFtKYLej5tSLgK6kYQyJ7a5oi5muNY6d5',
+  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '5s9NLSKCpMpZTDFP8mMTszuSw1uCBsMBr1CSiPAoTXxo',
   // oracle streams
   WEST_ORACLE_STREAM: process.env.WEST_ORACLE_STREAM || '000010_latest',
   USDP_ORACLE_STREAM: process.env.WEST_ORACLE_STREAM || '000003_latest',
-  // max difference in milliseconds between oracle_data.timestamp and current timestamp, used when issue EAST
+  // max difference in milliseconds between oracle_data.timestamp and block.timestamp, used when issue EAST
   EXPIRED_ORACLE_DATA: process.env.EXPIRED_ORACLE_DATA ? parseInt(process.env.EXPIRED_ORACLE_DATA) : 5 * 60 * 1000,
   // east collateral
   EAST_USDP_PART: process.env.EAST_USDP_PART ? parseFloat(process.env.EAST_USDP_PART) : 0.5,
@@ -112,8 +112,8 @@ export class ConfigService {
 
   getKeyPair() {
     return {
-      publicKey: this.envs.NODE_PUBLIC_KEY,
-      privateKey: this.envs.NODE_PRIVATE_KEY
+      publicKey: this.envs.EAST_SERVICE_PUBLIC_KEY,
+      privateKey: this.envs.EAST_SERVICE_PRIVATE_KEY
     }
   }
 }

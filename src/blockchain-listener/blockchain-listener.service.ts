@@ -39,7 +39,7 @@ export class BlockchainListenerService {
       }
     }
 
-    this.eastTransferAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.NODE_PUBLIC_KEY)
+    this.eastTransferAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
   }
 
   async start() {

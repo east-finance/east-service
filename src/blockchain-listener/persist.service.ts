@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
-import { DB_CON_TOKEN } from '../common/constants'
+import { DB_CON_TOKEN, Tables } from '../common/constants'
 import { ParsedIncomingFullGrpcTxType } from '@wavesenterprise/js-sdk'
 
 import { Knex } from 'knex'
@@ -15,8 +15,8 @@ export class PersistService {
   ) {}
 
 
-  async getTransactionByReuestId(id: string, sqlTx?: any) {
-    const transaction = await (sqlTx || this.knex)('transactions')
+  async getTransactionByRequestId(id: string, sqlTx?: any) {
+    const transaction = await (sqlTx || this.knex)(Tables.TransactionsLog)
       .select('*')
       .where('request_tx_id', id)
     if (transaction && transaction.length) {
@@ -26,14 +26,14 @@ export class PersistService {
 
 
   async getLastOracles(sqlTx: any, blockTimestamp: number) {
-    const [ west ] = await (sqlTx || this.knex)('oracles')
+    const [ west ] = await (sqlTx || this.knex)(Tables.Oracles)
       .select('*')
       .where('stream_id', this.configService.envs.WEST_ORACLE_STREAM)
       .andWhere('timestamp', '<=', new Date(blockTimestamp))
       .orderBy('timestamp', 'desc')
       .limit(1)
 
-    const [ usdp ] = await (sqlTx || this.knex)('oracles')
+    const [ usdp ] = await (sqlTx || this.knex)(Tables.Oracles)
       .select('*')
       .where('stream_id', this.configService.envs.USDP_ORACLE_STREAM)
       .andWhere('timestamp', '<=', new Date(blockTimestamp))
@@ -44,7 +44,7 @@ export class PersistService {
   }
 
   async saveBlock(tx: any, block: NodeBlock) {
-    await tx('blocks').insert({
+    await tx(Tables.Blocks).insert({
       height: block.height,
       timestamp: new Date(block.timestamp),
       generator: block.generator,
@@ -59,7 +59,7 @@ export class PersistService {
       return
     }
     const { value, timestamp } = JSON.parse(result.value)
-    await tx('oracles').insert({
+    await tx(Tables.Oracles).insert({
       tx_id: incomingTx.id,
       height: block.height,
       tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
@@ -71,7 +71,7 @@ export class PersistService {
   }
 
   getLastBlocksSignature = async () => {
-    const [ lastBlock ] = await this.knex('blocks').select('*').orderBy('height', 'DESC').limit(1)
+    const [ lastBlock ] = await this.knex(Tables.Blocks).select('*').orderBy('height', 'DESC').limit(1)
     if (lastBlock) {
       return lastBlock.signature
     } else if (this.configService.envs.FIRST_BLOCK_SIGNATURE) {
@@ -81,10 +81,10 @@ export class PersistService {
   }
 
   rollbackLastBlock = async () => {
-    await this.knex('blocks')
+    await this.knex(Tables.Blocks)
       .delete()
       .where('height', 'in', 
-        this.knex('blocks')
+        this.knex(Tables.Blocks)
           .select('height')
           .orderBy('height', 'DESC')
           .limit(1)
@@ -92,7 +92,7 @@ export class PersistService {
   }
 
   rollbackToBlockSignature = async (signature: string) => {
-    const [ block ] = await this.knex('blocks')
+    const [ block ] = await this.knex(Tables.Blocks)
       .select('*')
       .where({signature})
       .limit(1)
@@ -101,7 +101,7 @@ export class PersistService {
       throw new Error(`no block with signature: ${block}`)
     }
 
-    await this.knex('blocks')
+    await this.knex(Tables.Blocks)
       .delete()
       .where('height', '>=', block.height)
   }
