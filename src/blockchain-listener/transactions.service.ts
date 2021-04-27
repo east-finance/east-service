@@ -29,40 +29,51 @@ export class TransactionService {
   async receiveCallEastContract(sqlTx: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     if (call.tx.callContractTransaction && call.tx.callContractTransaction.senderPublicKey === this.configService.envs.EAST_SERVICE_PUBLIC_KEY) {
       const firstParam = call.tx.callContractTransaction.paramsList && call.tx.callContractTransaction.paramsList[0]
-      if (!firstParam) return;
+      if (!firstParam) {
+        return
+      }
       const parsed = JSON.parse(firstParam.value)
       switch (firstParam.key) {
 
         case Operations.mint:
           // save tx
-          await sqlTx(Tables.TransactionsLog).insert({
+          const [id] = await sqlTx(Tables.TransactionsLog).insert({
             tx_id: call.tx.callContractTransaction.id,
             status: TxStatuses.Executed,
             type: TxTypes.Issue,
             height: block.height,
             executed_tx_id: call.id,
-            tx_timestamp: call.tx.callContractTransaction.timestamp,
+            tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
             created_at: new Date(),
             address: parsed.address,
-          })
+          }).returning('id')
 
           // save vault
           const vaultInfo = call.resultsList?.find(res => res.key === `${StateKeys.vault}_${call.tx.callContractTransaction.id}`)
           const vaultParsed = JSON.parse(vaultInfo.value)
-          await this.vaultService.createVault(call.tx.callContractTransaction.id, vaultParsed, sqlTx)
+          const paramInfo = (call.tx.callContractTransaction.paramsList as any[])[1]
+          const paramInfoParsed = JSON.parse(paramInfo.value)
+          await this.vaultService.createVault({
+            txId: id,
+            vaultId: call.tx.callContractTransaction.id,
+            createdAt: new Date(call.timestamp as string),
+            vault: vaultParsed,
+            westRate: paramInfoParsed.west_usd_rate,
+            sqlTx
+          })
           
           // save balance
           const balanceInfo = call.resultsList?.find(res => res.key === `${StateKeys.balance}_${parsed.address}`)
           const balanceParsed = JSON.parse(balanceInfo.value)
           await sqlTx(Tables.BalanceLog).insert({
-            tx_id: call.tx.callContractTransaction.id,
+            id,
             address: parsed.address,
             east_amount: balanceParsed
           })
-          break;
+          break
         default:
           Logger.warn(`Unknown east contract params: ${firstParam}`)
-          break;
+          break
       }
     }
   }
@@ -102,7 +113,6 @@ export class TransactionService {
       west_usd_tx: west.id,
       usdp_usd_rate: usdp.value,
       usdp_usd_tx: usdp.id,
-      usdp_amount: usdpAmount,
       transfer_tx: transfer.id,
       transfer_amount: transferAmount,
     }
@@ -117,7 +127,9 @@ export class TransactionService {
           key: 'mint',
           value: JSON.stringify({
             address,
-            amount: eastAmount
+            eastAmount,
+            usdpAmount,
+            westAmount: transferAmount - westToUsdpAmount,
           })
         },
         {
@@ -140,8 +152,8 @@ export class TransactionService {
       type: TxTypes.Issue,
       height: block.height,
       request_tx_id: transfer.id,
-      request_tx_timestamp: new Date(transfer.timestamp as any),
-      tx_timestamp: dockerCall.timestamp,
+      request_tx_timestamp: new Date(transfer.timestamp as string),
+      tx_timestamp: new Date(dockerCall.timestamp as string),
       created_at: new Date(),
       address,
       info,

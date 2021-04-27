@@ -30,6 +30,8 @@ export async function up(knex: Knex): Promise<void> {
             west_amount      numeric                  NOT NULL,
             east_amount      numeric                  NOT NULL,
             usdp_amount      numeric                  NOT NULL,
+            west_rate        numeric                  NOT NULL,
+            created_at       timestamp with time zone NOT NULL,
             CONSTRAINT vault_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );
 

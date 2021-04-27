@@ -35,11 +35,11 @@ const envs = {
   
   // PROCESS ENVS:
   // если база пустая - подпись первого блока с которого начинать парсить блокчейн
-  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || 'geGS159SyJsbYEaH385vb3Z2oSzzLx2VVg4cL8ZTRAUPb1Cfu46dXa2q1ZLMBEZSbLwmexRKkhAXSXpsBV4sCsm',
+  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '479UT3wsAP8VGDeL4eTSovsgwyQsTPu6zPLbddd9NHT5AvPhFbxEr98ZQ3xVjM2mbhG2YgGGtHUWYECi4FJzLMY8',
   // oracle contract id
   ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV',
   // east contract id
-  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '5s9NLSKCpMpZTDFP8mMTszuSw1uCBsMBr1CSiPAoTXxo',
+  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'YX9mNGbQYenMLUPXqpaH3RBbNL7QBj6Q49SP5xTiPYc',
   // oracle streams
   WEST_ORACLE_STREAM: process.env.WEST_ORACLE_STREAM || '000010_latest',
   USDP_ORACLE_STREAM: process.env.WEST_ORACLE_STREAM || '000003_latest',

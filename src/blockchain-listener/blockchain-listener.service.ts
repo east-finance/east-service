@@ -83,10 +83,13 @@ export class BlockchainListenerService {
           }
         }
       } catch(err) {
+        Logger.error(err)
+        /*
         if (!this.configService.envs.IS_DEV_ENVIRONMENT) {
           throw err
         }
-      }
+        */
+    }
     })
   }
 
