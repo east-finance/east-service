@@ -1,4 +1,4 @@
-# DEPONENT
+# EAST service
 
 ## Описание [EAST смарт контракта](https://gitlab.wvservices.com/waves-enterprise/east-contract)
 
