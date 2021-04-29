@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
+import { TxStatuses } from '../../common/constants'
 
 export enum TransactionsTypes {
   Issue = 'issue',
@@ -17,9 +18,7 @@ export class TransactionsQuery {
   offset?: number
 }
 
-export class Transactions {
-  @ApiProperty({ type: String })
-  requestTxId: string
+export class Transaction {
 
   @ApiProperty({ type: String })
   callTxId: string
@@ -27,33 +26,54 @@ export class Transactions {
   @ApiProperty({ type: String })
   address: string
 
-  @ApiProperty({ type: Number })
-  requestHeight: number
-
-  @ApiProperty({ type: Number, required: false })
-  callHeight?: number
+  @ApiProperty({ enum: TxStatuses })
+  status: string
 
   @ApiProperty({ type: String, required: false })
-  callTimestamp?: string
+  requestTxId: string
+
+  @ApiProperty({ type: Number, required: false })
+  initHeight?: number
+
+  @ApiProperty({ type: Number, required: false })
+  executedHeight?: number
 
   @ApiProperty({ type: Number })
-  amount: number
+  callHeight?: number
+
+  @ApiProperty({ type: String })
+  callTimestamp?: string
 
   @ApiProperty({ enum: TransactionsTypes })
   transactionType: string
 
-  @ApiProperty({ type: String })
-  info: string
+  @ApiProperty({ type: Object })
+  info: object
 }
   
-export class TransactionsResponseDto {
-  @ApiProperty()
-  totalAmount: string
+export class Vault {
+
+  @ApiProperty({ type: Number })
+  id: number
 
   @ApiProperty({ type: String })
   address: string
 
-  @ApiProperty({ type: [Transactions] })
-  transactions: object[]
-}
-  
+  @ApiProperty({ type: String })
+  vaultId: string
+
+  @ApiProperty({ type: Number })
+  westAmount: number
+
+  @ApiProperty({ type: Number })
+  eastAmount: number
+
+  @ApiProperty({ type: Number })
+  usdpAmount: number
+
+  @ApiProperty({ type: Number })
+  westRate: number
+
+  @ApiProperty({ type: String })
+  createdAt: string
+}  

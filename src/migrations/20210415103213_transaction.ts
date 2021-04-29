@@ -20,7 +20,8 @@ export async function up(knex: Knex): Promise<void> {
             address          character varying        NOT NULL,
             info             jsonb,
             CONSTRAINT transactions_blocks FOREIGN KEY (height) REFERENCES blocks(height) ON DELETE CASCADE,
-            UNIQUE(request_tx_id)
+            UNIQUE(request_tx_id),
+            UNIQUE(tx_id, status)
         );
 
         CREATE TABLE vault_log (

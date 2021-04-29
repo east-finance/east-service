@@ -141,11 +141,12 @@ export class TransactionService {
     }
 
     const dockerCall = this.weSdk.API.Transactions.CallContract.V4(callBody)
+
     await dockerCall.broadcastGrpc({
       privateKey: this.configService.envs.EAST_SERVICE_PRIVATE_KEY,
       publicKey: this.configService.envs.EAST_SERVICE_PUBLIC_KEY,
     })
-
+    
     await sqlTx(Tables.TransactionsLog).insert({
       tx_id: await dockerCall.getId(),
       status: TxStatuses.Init,

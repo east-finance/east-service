@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
-import { TransactionsResponseDto, TransactionsQuery } from './entities/Transactions'
+import { Vault, Transaction, TransactionsQuery } from './entities/Transactions'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -15,9 +15,15 @@ export class UserController {
   ) {}
 
   @Get('/transactions')
-  @ApiOkResponse({ type: TransactionsResponseDto })
-  async getMe(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
+  @ApiOkResponse({ type: [Transaction] })
+  async getTransactions(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
     return this.userService.getTransactions(address, limit, offset)
+  }
+
+  @Get('/vaults')
+  @ApiOkResponse({ type: [Vault] })
+  async getMe(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
+    return this.userService.getVaults(address, limit, offset)
   }
 }
 
