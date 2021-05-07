@@ -18,7 +18,8 @@ export class UserService {
       westAmount: `${Tables.VaultLog}.west_amount`,
       eastAmount: `${Tables.VaultLog}.east_amount`,
       usdpAmount: `${Tables.VaultLog}.usdp_amount`,
-      westRate: `${Tables.VaultLog}.west_rate`,
+      westRateTimestamp: `${Tables.VaultLog}.west_rate_timestamp`,
+      usdpRateTimestamp: `${Tables.VaultLog}.usdp_rate_timestamp`,
       createdAt: `${Tables.VaultLog}.created_at`
     }
 

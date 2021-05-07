@@ -3,7 +3,7 @@ import { Knex } from "knex"
 
 export async function up(knex: Knex): Promise<void> {
     return knex.raw(`
-        CREATE TYPE tx_type AS ENUM ('issue', 'transfer', 'burn');
+        CREATE TYPE tx_type AS ENUM ('mint', 'transfer', 'burn');
         CREATE TYPE tx_status AS ENUM ('init', 'executed');
 
         CREATE TABLE transactions_log (
@@ -31,7 +31,8 @@ export async function up(knex: Knex): Promise<void> {
             west_amount      numeric                  NOT NULL,
             east_amount      numeric                  NOT NULL,
             usdp_amount      numeric                  NOT NULL,
-            west_rate        numeric                  NOT NULL,
+            west_rate_timestamp timestamp with time zone NOT NULL,
+            usdp_rate_timestamp timestamp with time zone NOT NULL,
             created_at       timestamp with time zone NOT NULL,
             CONSTRAINT vault_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );

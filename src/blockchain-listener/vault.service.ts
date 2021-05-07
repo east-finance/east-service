@@ -17,14 +17,12 @@ export class VaultService {
     vaultId,
     createdAt,
     vault,
-    westRate,
     sqlTx
   } : {
     txId: string,
     vaultId: string,
     createdAt: Date,
     vault: IVault,
-    westRate: number,
     sqlTx?: any
   }) {
     // TODO make some actions
@@ -35,7 +33,8 @@ export class VaultService {
       west_amount: vault.westAmount,
       east_amount: vault.eastAmount,
       usdp_amount: vault.usdpAmount,
-      west_rate: westRate,
+      west_rate_timestamp: new Date(vault.westRateTimestamp),
+      usdp_rate_timestamp: new Date(vault.usdpRateTimestamp),
       created_at: createdAt
     })
   }

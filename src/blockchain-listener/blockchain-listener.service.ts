@@ -35,7 +35,7 @@ export class BlockchainListenerService {
       asyncGrpc: false,
       getLastBlocksSignature: this.persistService.getLastBlocksSignature,
       filters: {
-        tx_types: [ 105, TRANSACTION_TYPES.Transfer ]
+        tx_types: [ 105, TRANSACTION_TYPES.Transfer, TRANSACTION_TYPES.Atomic ]
       }
     }
 
@@ -76,10 +76,23 @@ export class BlockchainListenerService {
           }
 
           // RECEIVE TRANSFER - ISSUE EAST TO ADDRESS
-          if (incomingTx.grpcType === 'transferTransaction' &&
-            guard<ParsedIncomingFullGrpcTxType['transferTransaction']>(incomingTx)
-            && incomingTx.recipient === this.eastTransferAddress) {
-            await this.transactionService.issueTockens(trx, incomingTx, block)
+          if (incomingTx.grpcType === 'atomicTransaction' &&
+            guard<ParsedIncomingFullGrpcTxType['atomicTransaction']>(incomingTx)) {
+            const length = incomingTx.transactionsList?.length
+            if (length) {
+              for (let i = 0; i < length; i++) {
+                const tx = (incomingTx.transactionsList as any[])[i]
+
+                if (tx.grpcType === 'executedContractTransaction'
+                  && guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(tx) 
+                  && tx.tx
+                  && tx.tx.callContractTransaction
+                  && tx.tx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID
+                ) {
+                  await this.transactionService.receiveCallEastContract(trx, tx, block)
+                }
+              }
+            }
           }
         }
       } catch(err) {
@@ -89,7 +102,7 @@ export class BlockchainListenerService {
           throw err
         }
         */
-    }
+      }
     })
   }
 

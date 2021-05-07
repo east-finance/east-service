@@ -14,21 +14,35 @@ export enum Tables {
 
 export enum Operations {
   mint = 'mint',
+  recalculate = 'recalculate',
+  supply = 'supply',
   transfer = 'transfer',
+  burn_init = 'burn_init',
   burn = 'burn',
-  recalculate_init = 'recalculate_init',
-  recalculate_execute = 'recalculate_execute',
+  liquidate = 'liquidate',
 }
 
 export enum StateKeys {
-  adminPublicKey = 'admin_pub_key',
   totalSupply = 'total_supply',
   balance = 'balance',
-  vault = 'vault'
+  vault = 'vault',
+  config = 'config',
+  exchange = 'exchange'
+}
+
+export interface ContractConfigParam {
+  oracleContractId: string,
+  oracleTimestampMaxDiff: number,
+  usdpPart: number,
+  westCollateral: number,
+  liquidationCollateral: number,
+  minHoldTime: number,
+  adminAddress: string,
+  adminPublicKey: string
 }
 
 export enum TxTypes {
-  Issue = 'issue',
+  Issue = 'mint',
   Transfer = 'transfer',
   Burn = 'burn'
 }
@@ -43,4 +57,33 @@ export interface IVault {
   eastAmount: number,
   westAmount: number,
   usdpAmount: number,
+  westRateTimestamp: number,
+  usdpRateTimestamp: number,
+  liquidated?: boolean
+}
+
+export interface BurnParam {
+  vaultId: string,
+}
+
+export interface LiquidateParam {
+  vaultId: string,
+}
+
+export interface TransferParam {
+  to: string,
+  eastAmount: number
+}
+
+export interface MintParam {
+  transferId: string,
+}
+
+export interface SupplyParam {
+  transferId: string,
+  vaultId: string
+}
+
+export type RecalculateParam = {
+  vaultId: string
 }
