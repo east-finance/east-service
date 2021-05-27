@@ -14,28 +14,26 @@ export class VaultService {
 
   async createVault({
     txId,
-    vaultId,
-    createdAt,
     vault,
+    address,
     sqlTx
   } : {
     txId: string,
-    vaultId: string,
-    createdAt: Date,
     vault: IVault,
+    address: string,
     sqlTx?: any
   }) {
     // TODO make some actions
     await (sqlTx || this.knex)(Tables.VaultLog).insert({
       id: txId,
-      vault_id: vaultId,
-      address: vault.address,
+      address: address,
       west_amount: vault.westAmount,
       east_amount: vault.eastAmount,
       usdp_amount: vault.usdpAmount,
-      west_rate_timestamp: new Date(vault.westRateTimestamp),
-      usdp_rate_timestamp: new Date(vault.usdpRateTimestamp),
-      created_at: createdAt
+      east_rate: vault.westRate.value,
+      usdp_rate: vault.usdpRate.value,
+      west_rate_timestamp: new Date(+vault.westRate.timestamp),
+      usdp_rate_timestamp: new Date(+vault.usdpRate.timestamp)
     })
   }
 }

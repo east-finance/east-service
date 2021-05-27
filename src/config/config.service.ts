@@ -5,7 +5,7 @@ import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
 
 
-const AUTH_URL = process.env.AUTH_URL || 'http://localhost/authServiceAddress'
+const AUTH_URL = process.env.AUTH_URL || 'https://carter.welocal.dev/authServiceAddress'
 let PUBLIC_KEY: string = ''
 try {
   PUBLIC_KEY = execSync(`curl -s -k '${AUTH_URL}/v1/auth/publicKey'`).toString()
@@ -24,10 +24,10 @@ const envs = {
   POSTGRES_PORT: process.env.POSTGRES_PORT || '5432',
   POSTGRES_HOST: process.env.POSTGRES_HOST || '127.0.0.1',
   PG_SSL_CERT_FILE_PATH: process.env.PG_SSL_CERT_FILE_PATH,
-  NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '0.0.0.0:6865',
+  NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '51.178.69.5:6865',
   NODE_API_KEY: process.env.NODE_API_KEY || 'we',
-  EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || 'HsvBdAYfUATNdw3LKkzgQmJgpeivqnKzTs7vReVPyAKP',
-  EAST_SERVICE_PRIVATE_KEY: process.env.EAST_SERVICE_PRIVATE_KEY || 'EVdwVuUic2gvmBJGSZubWxqBDF1sPzUs5Ma4gdZ78RNw',
+  EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
+  EAST_SERVICE_PRIVATE_KEY: process.env.EAST_SERVICE_PRIVATE_KEY || 'DRhyQvDKvaJeuMbhQR9gdyT8dMyoaHry23SifTNhN1qf',
 
   // AUTH
   AUTH_URL,
@@ -35,11 +35,11 @@ const envs = {
   
   // PROCESS ENVS:
   // если база пустая - подпись первого блока с которого начинать парсить блокчейн
-  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '5xyVs7jYsyKVVfYpvwbowHhkpifsUeT299W7pJvGP3M1cvaqb57MVD3T4qantWYFkhEnGRYY2eNBiudEotu33snX',
+  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '3t34h3j3rdqAQowViXEe4GmuTqkGHgzWHHNaZqNTQaXxvnK6VFboDMMSUnukHCk8Gri92kfwtjyiGATokFdkXrnK',
   // oracle contract id
   ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV',
   // east contract id
-  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '9wRJSVmCTtYz2tMNSwgL6LKawK7xsoaws1Jg2gHUA8Ra',
+  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'EtVQ6PGJZeteTepJeTu4nbYpj3nfd3gcseoY9WfQg8QF',
   // oracle streams
   WEST_ORACLE_STREAM: '000010_latest',
   USDP_ORACLE_STREAM: '000003_latest',

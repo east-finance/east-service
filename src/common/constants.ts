@@ -8,18 +8,7 @@ export enum Tables {
   Blocks = 'blocks',
   Oracles = 'oracles',
   VaultLog = 'vault_log',
-  TransactionsLog = 'transactions_log',
-  BalanceLog = 'balance_log',
-}
-
-export enum Operations {
-  mint = 'mint',
-  recalculate = 'recalculate',
-  supply = 'supply',
-  transfer = 'transfer',
-  burn_init = 'burn_init',
-  burn = 'burn',
-  liquidate = 'liquidate',
+  TransactionsLog = 'transactions_log'
 }
 
 export enum StateKeys {
@@ -42,23 +31,36 @@ export interface ContractConfigParam {
 }
 
 export enum TxTypes {
-  Issue = 'mint',
-  Transfer = 'transfer',
-  Burn = 'burn'
+  mint = 'mint',
+  reissue = 'reissue',
+  supply = 'supply',
+  transfer = 'transfer',
+  close_init = 'close_init',
+  close = 'close',
+  liquidate = 'liquidate',
+  update_config = 'update_config',
+  claim_overpay_init = 'claim_overpay_init',
+  claim_overpay = 'claim_overpay'
 }
+
 
 export enum TxStatuses {
   Init = 'init',
   Executed = 'executed'
 }
 
+export interface Oracle {
+  value: number,
+  timestamp: number
+}
+
 export interface IVault {
-  address: string,
   eastAmount: number,
   westAmount: number,
   usdpAmount: number,
-  westRateTimestamp: number,
-  usdpRateTimestamp: number,
+  westRate: Oracle,
+  usdpRate: Oracle,
+  updatedAt: number,
   liquidated?: boolean
 }
 
