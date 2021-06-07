@@ -27,18 +27,28 @@ export async function up(knex: Knex): Promise<void> {
 
         CREATE TABLE vault_log (
             id               integer                  PRIMARY KEY,
+            vault_id         character varying        NOT NULL,
             address          character varying        NOT NULL,
             west_amount      numeric                  NOT NULL,
             east_amount      numeric                  NOT NULL,
             usdp_amount      numeric                  NOT NULL,
-            east_rate        numeric                  NOT NULL,
-            usdp_rate        numeric                  NOT NULL,
-            west_rate_timestamp timestamp with time zone NOT NULL,
-            usdp_rate_timestamp timestamp with time zone NOT NULL,
+            west_rate        numeric,
+            usdp_rate        numeric,
+            west_rate_timestamp timestamp with time zone,
+            usdp_rate_timestamp timestamp with time zone,
             created_at       timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT vault_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );
 
+        CREATE TABLE balance_log (
+            id               integer                  PRIMARY KEY,
+            address          character varying        NOT NULL,
+            east_amount      numeric                  NOT NULL,
+            type             tx_type                  NOT NULL,
+            CONSTRAINT balance_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
+        );
+        
+        CREATE INDEX IF NOT EXISTS balance_log_address ON public.balance_log USING btree (address);
         CREATE INDEX IF NOT EXISTS transactions_log_address ON public.transactions_log USING btree (height, created_at);
         CREATE INDEX IF NOT EXISTS transactions_log_order ON public.transactions_log USING btree (address);
         CREATE INDEX IF NOT EXISTS tvault_log_address ON public.vault_log USING btree (address);

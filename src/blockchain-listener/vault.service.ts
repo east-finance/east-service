@@ -12,13 +12,15 @@ export class VaultService {
     @Inject(DB_CON_TOKEN) readonly knex: Knex
   ) {}
 
-  async createVault({
+  async addVaultLog({
     txId,
+    vaultId,
     vault,
     address,
     sqlTx
   } : {
     txId: string,
+    vaultId: string,
     vault: IVault,
     address: string,
     sqlTx?: any
@@ -26,14 +28,15 @@ export class VaultService {
     // TODO make some actions
     await (sqlTx || this.knex)(Tables.VaultLog).insert({
       id: txId,
-      address: address,
+      vault_id: vaultId,
+      address,
       west_amount: vault.westAmount,
       east_amount: vault.eastAmount,
       usdp_amount: vault.usdpAmount,
-      east_rate: vault.westRate.value,
+      west_rate: vault.westRate.value,
       usdp_rate: vault.usdpRate.value,
-      west_rate_timestamp: new Date(+vault.westRate.timestamp),
-      usdp_rate_timestamp: new Date(+vault.usdpRate.timestamp)
+      west_rate_timestamp: vault.westRate.timestamp ? new Date(+vault.westRate.timestamp) : null,
+      usdp_rate_timestamp: vault.usdpRate.timestamp ? new Date(+vault.usdpRate.timestamp) : null
     })
   }
 }

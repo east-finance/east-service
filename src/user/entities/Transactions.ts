@@ -74,6 +74,15 @@ export class Vault {
   @ApiProperty({ type: Number })
   westRate: number
 
+  @ApiProperty({ type: Number })
+  usdpRate: number
+
+  @ApiProperty({ type: Date })
+  usdpRateTimestamp: Date
+
+  @ApiProperty({ type: Date })
+  westRateTimestamp: Date
+
   @ApiProperty({ type: String })
   createdAt: string
 }  

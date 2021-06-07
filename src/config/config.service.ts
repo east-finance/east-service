@@ -24,6 +24,7 @@ const envs = {
   POSTGRES_PORT: process.env.POSTGRES_PORT || '5432',
   POSTGRES_HOST: process.env.POSTGRES_HOST || '127.0.0.1',
   PG_SSL_CERT_FILE_PATH: process.env.PG_SSL_CERT_FILE_PATH,
+  NODE_ADDRESS: process.env.NODE_ADDRESS || 'https://carter.welocal.dev/node-0',
   NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '51.178.69.5:6865',
   NODE_API_KEY: process.env.NODE_API_KEY || 'we',
   EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
@@ -35,11 +36,12 @@ const envs = {
   
   // PROCESS ENVS:
   // если база пустая - подпись первого блока с которого начинать парсить блокчейн
-  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '3t34h3j3rdqAQowViXEe4GmuTqkGHgzWHHNaZqNTQaXxvnK6VFboDMMSUnukHCk8Gri92kfwtjyiGATokFdkXrnK',
+  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '5dz7JXB1iUdbHFLfeztLUaZtFk2S3iWefJDRp5E1UTJDyoeBsqFULri9ZeKHPykGtciVnSYUtLwEZ6PUAPg1zzMz',
   // oracle contract id
   ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV',
   // east contract id
-  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'EtVQ6PGJZeteTepJeTu4nbYpj3nfd3gcseoY9WfQg8QF',
+  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'GCgS6gagq2s3bEFaYq9nUSZV3nfV4cjQFpmxPCiNzuJH',
+  USDAP_TOKEN_ID: process.env.USDAP_TOKEN_ID as string || '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR',
   // oracle streams
   WEST_ORACLE_STREAM: '000010_latest',
   USDP_ORACLE_STREAM: '000003_latest',
@@ -49,8 +51,6 @@ const envs = {
   EAST_USDP_PART: process.env.EAST_USDP_PART ? parseFloat(process.env.EAST_USDP_PART) : 0.5,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
 
-  // IS_DEV
-  IS_DEV_ENVIRONMENT: process.env.IS_DEV_ENVIRONMENT && process.env.IS_DEV_ENVIRONMENT === 'true' || true,
 }
 
 export class ConfigService {

@@ -8,7 +8,8 @@ export enum Tables {
   Blocks = 'blocks',
   Oracles = 'oracles',
   VaultLog = 'vault_log',
-  TransactionsLog = 'transactions_log'
+  TransactionsLog = 'transactions_log',
+  BalanceLog = 'balance_log'
 }
 
 export enum StateKeys {
@@ -50,8 +51,8 @@ export enum TxStatuses {
 }
 
 export interface Oracle {
-  value: number,
-  timestamp: number
+  value?: number,
+  timestamp?: number
 }
 
 export interface IVault {
@@ -60,7 +61,6 @@ export interface IVault {
   usdpAmount: number,
   westRate: Oracle,
   usdpRate: Oracle,
-  updatedAt: number,
   liquidated?: boolean
 }
 

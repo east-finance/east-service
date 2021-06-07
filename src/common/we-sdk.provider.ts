@@ -8,9 +8,9 @@ import { Logger } from '@nestjs/common'
 export const WeSdkFactory = {
   provide: WE_SDK_PROVIDER_TOKEN,
   useFactory: async (configService: ConfigService) => {
-    const nodeAddress = configService.getGrpcAddresses()
+    const nodeGRPCAddress = configService.getGrpcAddresses()
     const config = {
-      addresses: nodeAddress,
+      addresses: nodeGRPCAddress,
       logger: {
         info: Logger.log.bind(Logger),
         error: Logger.error.bind(Logger),
@@ -31,6 +31,7 @@ export const WeSdkFactory = {
     return create({
       initialConfiguration: {
         ...MAINNET_CONFIG,
+        nodeAddress: configService.envs.NODE_ADDRESS,
         crypto: wavesConfig.cryptoType === 1 ? 'gost' : 'waves',
         networkByte: wavesConfig.chainId,
         minimumFee,

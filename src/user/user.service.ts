@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common'
 import { DB_CON_TOKEN, Tables, TxStatuses } from '../common/constants'
 import { Knex } from 'knex'
+import { Vault } from './entities/Transactions'
 
 
 export class UserService {
@@ -8,6 +9,32 @@ export class UserService {
   constructor (
     @Inject(DB_CON_TOKEN) readonly knex: Knex
   ) {}
+
+
+  async getCurrentVault(address: string): Promise<Vault> {
+    const knex = this.knex
+    const select = {
+      id: `${Tables.VaultLog}.id`,
+      vaultId: `${Tables.VaultLog}.vault_id`,
+      address: `${Tables.VaultLog}.address`,
+      westAmount: `${Tables.VaultLog}.west_amount`,
+      eastAmount: `${Tables.VaultLog}.east_amount`,
+      usdpAmount: `${Tables.VaultLog}.usdp_amount`,
+      westRate: `${Tables.VaultLog}.west_rate`,
+      usdpRate: `${Tables.VaultLog}.usdp_rate`,
+      westRateTimestamp: `${Tables.VaultLog}.west_rate_timestamp`,
+      usdpRateTimestamp: `${Tables.VaultLog}.usdp_rate_timestamp`,
+      createdAt: `${Tables.VaultLog}.created_at`
+    }
+
+    const [ res ] = await knex(Tables.VaultLog)
+      .select(select)
+      .where({address})
+      .orderBy('id', 'desc')
+      .limit(1);
+
+    return res
+  }
 
   async getVaults(address: string, limit: number, offset = 0) {
     const knex = this.knex

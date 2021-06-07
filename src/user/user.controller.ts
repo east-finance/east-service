@@ -20,9 +20,15 @@ export class UserController {
     return this.userService.getTransactions(address, limit, offset)
   }
 
+  @Get('/vault')
+  @ApiOkResponse({ type: Vault })
+  async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: TransactionsQuery) {
+    return this.userService.getCurrentVault(address)
+  }
+
   @Get('/vaults')
   @ApiOkResponse({ type: [Vault] })
-  async getMe(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
+  async getVaults(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
     return this.userService.getVaults(address, limit, offset)
   }
 }

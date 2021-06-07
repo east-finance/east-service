@@ -6,6 +6,8 @@ import { PersistService } from './persist.service'
 import { VaultService } from './vault.service'
 import { TransactionService } from './transactions.service'
 import { DatabaseModule } from '../database/database.module'
+import { UserModule } from '../user/user.module'
+import { UserService } from '../user/user.service'
 
 
 @Module({
@@ -16,9 +18,13 @@ import { DatabaseModule } from '../database/database.module'
     BlockchainListenerService,
     PersistService,
     VaultService,
-    TransactionService
+    TransactionService,
+    UserService
   ],
-  imports: [DatabaseModule.forRoot()],
+  imports: [
+    DatabaseModule.forRoot(),
+    UserModule
+  ],
   exports: [BlockchainListenerService]
 })
 export class BlockchainListenerModule {}
