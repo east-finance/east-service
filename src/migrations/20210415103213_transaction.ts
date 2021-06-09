@@ -4,7 +4,7 @@ import { Knex } from "knex"
 export async function up(knex: Knex): Promise<void> {
     return knex.raw(`
         CREATE TYPE tx_type AS ENUM ('mint', 'transfer', 'close', 'reissue', 'supply', 'close_init', 'liquidate', 'update_config', 'claim_overpay_init', 'claim_overpay');
-        CREATE TYPE tx_status AS ENUM ('init', 'executed');
+        CREATE TYPE tx_status AS ENUM ('init', 'executed', 'declined');
 
         CREATE TABLE transactions_log (
             id               SERIAL                   PRIMARY KEY,

@@ -18,8 +18,6 @@ import { UserService } from '../user/user.service'
 
 @Injectable()
 export class TransactionService {
-  maxDiff: number
-  usdpPartInPosition: number
   ownerAddress: string
   closeComission = 0.3
 
@@ -30,9 +28,6 @@ export class TransactionService {
     private readonly userService: UserService,
     private readonly vaultService: VaultService
   ) {
-    this.maxDiff = this.configService.envs.EXPIRED_ORACLE_DATA
-    const { EAST_USDP_PART, EAST_WEST_COLLATERAL } = this.configService.envs
-    this.usdpPartInPosition = EAST_USDP_PART / ((1 - EAST_USDP_PART) * EAST_WEST_COLLATERAL + EAST_USDP_PART)
     this.ownerAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
   }
 
@@ -56,15 +51,21 @@ export class TransactionService {
       case TxTypes.claim_overpay:
         await this.receiveTypicalTx(TxTypes.claim_overpay, sqlTx, value, call, block)
         break
+      case TxTypes.claim_overpay_init:
+        await this.сlaimOverpayInit(sqlTx, value, call, block)
+        break
       case TxTypes.close_init:
         await this.initClose(sqlTx, call, block)
         break
       case TxTypes.close:
         txId = await this.close(sqlTx, value, call, block)
         break
+      case TxTypes.transfer:
+        await this.transfer(sqlTx, value, call, block)
+        break
     }
     // default balance update
-    if ([TxTypes.close, TxTypes.mint, TxTypes.reissue, TxTypes.transfer].includes(firstParam.key)) {
+    if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
       const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
       for (const result of balancesUpdated) {
         const parsed = result.key.split('_')
@@ -76,6 +77,149 @@ export class TransactionService {
         })
       }
     }
+  }
+
+  async transfer(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+    const addressFrom = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    const addressTo = firstParam.to
+
+    const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
+    const balanceFrom = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressFrom}`)
+    const balanceTo = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressTo}`)
+
+    const resFrom = await sqlTx(Tables.TransactionsLog).insert({
+      tx_id: call.tx.callContractTransaction.id,
+      address: addressFrom,
+      status: TxStatuses.Executed,
+      type: TxTypes.transfer,
+      height: block.height,
+      executed_tx_id: call.id,
+      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+      params: firstParam,
+    }).returning('id')
+
+    await sqlTx(Tables.BalanceLog).insert({
+      id: resFrom[0],
+      address: addressFrom,
+      type: TxTypes.transfer,
+      east_amount: balanceFrom.value
+    })
+
+    const resTo = await sqlTx(Tables.TransactionsLog).insert({
+      tx_id: call.tx.callContractTransaction.id,
+      address: addressTo,
+      status: TxStatuses.Executed,
+      type: TxTypes.transfer,
+      height: block.height,
+      executed_tx_id: call.id,
+      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+      params: firstParam,
+    }).returning('id')
+
+    await sqlTx(Tables.BalanceLog).insert({
+      id: resTo[0],
+      address: addressFrom,
+      type: TxTypes.transfer,
+      east_amount: balanceTo.value
+    })
+  }
+
+  async сlaimOverpayInit(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+    const address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    
+    const vaultKey = await this.weSdk.API.Node.contracts.getKey(
+      this.configService.envs.EAST_CONTRACT_ID,
+      `${StateKeys.vault}_${address}`
+    ) as any
+    const vault = JSON.parse(vaultKey.value) as IVault
+
+    const westRateKey = await this.weSdk.API.Node.contracts.getKey(
+      this.configService.envs.ORACLE_CONTRACT_ID,
+      this.configService.envs.WEST_ORACLE_STREAM
+    ) as any
+    const westRate = JSON.parse(westRateKey.value)
+
+    const usdapRateKey = await this.weSdk.API.Node.contracts.getKey(
+      this.configService.envs.ORACLE_CONTRACT_ID,
+      this.configService.envs.USDP_ORACLE_STREAM
+    ) as any
+    const usdapRate = JSON.parse(usdapRateKey.value)
+    
+    const westPart = 1 - this.configService.envs.EAST_USDAP_PART
+    const westCollateral = this.configService.envs.EAST_WEST_COLLATERAL
+    
+    const westExpectedUsdValue = vault.eastAmount * westPart * usdapRate.value * westCollateral
+    const expectedWestAmount = westExpectedUsdValue / westRate.value
+
+    if (expectedWestAmount >= vault.westAmount) {
+      await sqlTx(Tables.TransactionsLog).insert({
+        tx_id: call.tx.callContractTransaction.id,
+        address,
+        status: TxStatuses.Declined,
+        type: TxTypes.claim_overpay_init,
+        request_tx_id: call.tx.callContractTransaction.id,
+        request_tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as number),
+        request_params: {},
+        height: block.height,
+        tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+        params: JSON.stringify(firstParam),
+      })
+      return;
+    }
+
+    let returnedAmount = vault.westAmount - expectedWestAmount
+    if (Number(firstParam.amount) < returnedAmount) {
+      returnedAmount = Number(firstParam.amount)
+    }
+
+    const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
+      recipient: address,
+      assetId: '',
+      amount: Math.round(returnedAmount * 100000000),
+      timestamp: Date.now(),
+      attachment: call.tx.callContractTransaction.id,
+      atomicBadge: {
+        trustedSender: this.ownerAddress
+      }
+    });
+    
+    const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
+      contractId: this.configService.envs.EAST_CONTRACT_ID,
+      contractVersion: 1,
+      timestamp: Date.now(),
+      params: [{
+        type: 'string',
+        key: TxTypes.claim_overpay,
+        value: JSON.stringify({
+          transferId: await overpayTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+          address: address,
+          requestId: call.tx.callContractTransaction.id
+        })
+      }],
+      atomicBadge: {
+        trustedSender: this.ownerAddress
+      }
+    });
+    
+    const transactions = [overpayTransfer, overpayCall]
+
+    await this.weSdk.API.Transactions.broadcastAtomic(
+      this.weSdk.API.Transactions.Atomic.V1({transactions}),
+      this.configService.getKeyPair()
+    )
+
+    await sqlTx(Tables.TransactionsLog).insert({
+      tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+      address,
+      status: TxStatuses.Init,
+      type: TxTypes.claim_overpay_init,
+      request_tx_id: call.tx.callContractTransaction.id,
+      request_tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as number),
+      request_params: {},
+      height: block.height,
+      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+      params: JSON.stringify(firstParam),
+    })
   }
 
   async close(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
@@ -147,7 +291,7 @@ export class TransactionService {
       timestamp: Date.now(),
       params: [{
         type: 'string',
-        key: 'close',
+        key: TxTypes.close,
         value: JSON.stringify(params)
       }],
       atomicBadge: {
@@ -181,14 +325,14 @@ export class TransactionService {
 
   async receiveTypicalTx(txType: TxTypes, sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     let address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    if (txType === TxTypes.claim_overpay) {
+      address = firstParam.address
+    }
+
     let vaultId = call.tx.callContractTransaction.id
 
     if (txType !== TxTypes.mint) {
       vaultId = (await this.userService.getCurrentVault(address)).vaultId
-    }
-
-    if (txType === TxTypes.claim_overpay) {
-      address = firstParam.address
     }
 
     const vaultInfo = call.resultsList?.find(res => res.key === `${StateKeys.vault}_${address}`)

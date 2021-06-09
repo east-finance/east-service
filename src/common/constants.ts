@@ -47,7 +47,8 @@ export enum TxTypes {
 
 export enum TxStatuses {
   Init = 'init',
-  Executed = 'executed'
+  Executed = 'executed',
+  Declined = 'declined'
 }
 
 export interface Oracle {

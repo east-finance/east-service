@@ -43,12 +43,12 @@ const envs = {
   EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'GCgS6gagq2s3bEFaYq9nUSZV3nfV4cjQFpmxPCiNzuJH',
   USDAP_TOKEN_ID: process.env.USDAP_TOKEN_ID as string || '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR',
   // oracle streams
-  WEST_ORACLE_STREAM: '000010_latest',
-  USDP_ORACLE_STREAM: '000003_latest',
+  WEST_ORACLE_STREAM: '000003_latest',
+  USDP_ORACLE_STREAM: '000010_latest',
   // max difference in milliseconds between oracle_data.timestamp and block.timestamp, used when issue EAST
   EXPIRED_ORACLE_DATA: process.env.EXPIRED_ORACLE_DATA ? parseInt(process.env.EXPIRED_ORACLE_DATA) : 5 * 60 * 1000,
   // east collateral
-  EAST_USDP_PART: process.env.EAST_USDP_PART ? parseFloat(process.env.EAST_USDP_PART) : 0.5,
+  EAST_USDAP_PART: process.env.EAST_USDAP_PART ? parseFloat(process.env.EAST_USDAP_PART) : 0.5,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
 
 }
