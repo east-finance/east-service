@@ -1,11 +1,37 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { TxStatuses } from '../../common/constants'
 
+export enum OracleStreams {
+  USDAP = '000010_latest',
+  WEST = '000003_latest'
+}
+
 export enum TransactionsTypes {
   Issue = 'issue',
   Transfer = 'transfer',
   Burn = 'burn',
 }
+
+export class AddressQuery {
+  @ApiProperty({required: true})
+  address: string
+}
+
+
+export class OraclesQuery {
+  @ApiProperty({enum: OracleStreams})
+  streamId: string
+
+  @ApiProperty({required: false})
+  dateFrom?: number
+
+  @ApiProperty({required: false})
+  dateTo?: number
+
+  @ApiProperty({required: false})
+  limit?: number
+}
+
 
 export class TransactionsQuery {
   @ApiProperty({required: true})
@@ -85,4 +111,19 @@ export class Vault {
 
   @ApiProperty({ type: String })
   createdAt: string
+}  
+
+export class Balance {
+
+  @ApiProperty({ type: Number })
+  id: number
+
+  @ApiProperty({ type: String })
+  address: string
+
+  @ApiProperty({ type: Number })
+  eastAmount: number
+
+  @ApiProperty({ enum: TransactionsTypes })
+  type: string
 }  

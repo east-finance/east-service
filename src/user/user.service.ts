@@ -9,7 +9,44 @@ export class UserService {
   constructor (
     @Inject(DB_CON_TOKEN) readonly knex: Knex
   ) {}
+  
+  getOracles(stream: string, dateFrom: Date, dateTo: Date, limit?: number) {
+    const knex = this.knex
+    const select = {
+      value: knex.raw(`"${Tables.Oracles}"."value"`),
+      timestamp: `${Tables.Oracles}.timestamp`
+    }
 
+    const req = knex(Tables.Oracles)
+      .select(select)
+      .whereBetween('timestamp', [dateFrom, dateTo])
+      .andWhere({stream_id: stream})
+      .orderBy('timestamp', 'desc')
+
+    if (limit) {
+      req.limit(limit)
+    }
+
+    return req
+  }
+  
+  async getCurrentBalance(address: string): Promise<Vault> {
+    const knex = this.knex
+    const select = {
+      id: `${Tables.BalanceLog}.id`,
+      address: `${Tables.BalanceLog}.address`,
+      eastAmount: `${Tables.BalanceLog}.east_amount`,
+      type: `${Tables.BalanceLog}.type`,
+    }
+
+    const [ res ] = await knex(Tables.BalanceLog)
+      .select(select)
+      .where({address})
+      .orderBy('id', 'desc')
+      .limit(1)
+
+    return res
+  }
 
   async getCurrentVault(address: string): Promise<Vault> {
     const knex = this.knex
@@ -31,7 +68,7 @@ export class UserService {
       .select(select)
       .where({address})
       .orderBy('id', 'desc')
-      .limit(1);
+      .limit(1)
 
     return res
   }
@@ -68,6 +105,7 @@ export class UserService {
   }
 
   async getTransactions(address: string, limit: number, offset = 0) {
+    // TODO add declined
     const knex = this.knex
     const inintTxs = 'init_txs'
     const executedTxs = 'executed_txs'
@@ -81,7 +119,7 @@ export class UserService {
       transactionType: knex.raw(`coalesce(${executedTxs}.type, ${inintTxs}.type)`),
       callTimestamp: knex.raw(`coalesce(${inintTxs}.tx_timestamp, ${executedTxs}.tx_timestamp)`),
       status: knex.raw(`coalesce(${executedTxs}.status, ${inintTxs}.status)`),
-      info: knex.raw(`coalesce(${inintTxs}.info, ${executedTxs}.info)`),
+      params: knex.raw(`coalesce(${inintTxs}.params, ${executedTxs}.params)`),
     }
 
     const transactions = await knex.with('unique_txs', 

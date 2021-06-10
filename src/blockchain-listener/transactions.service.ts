@@ -118,7 +118,7 @@ export class TransactionService {
 
     await sqlTx(Tables.BalanceLog).insert({
       id: resTo[0],
-      address: addressFrom,
+      address: addressTo,
       type: TxTypes.transfer,
       east_amount: balanceTo.value
     })
@@ -181,7 +181,7 @@ export class TransactionService {
       atomicBadge: {
         trustedSender: this.ownerAddress
       }
-    });
+    })
     
     const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
       contractId: this.configService.envs.EAST_CONTRACT_ID,
@@ -192,7 +192,7 @@ export class TransactionService {
         key: TxTypes.claim_overpay,
         value: JSON.stringify({
           transferId: await overpayTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
-          address: address,
+          address,
           requestId: call.tx.callContractTransaction.id
         })
       }],

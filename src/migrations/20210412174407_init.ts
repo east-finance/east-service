@@ -3,6 +3,8 @@ import { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
     return knex.raw(`
+        CREATE TYPE oracle_stream_id AS ENUM ('000010_latest', '000003_latest');
+
         CREATE TABLE blocks (
             height         integer                     NOT NULL PRIMARY KEY,
             timestamp      timestamp with time zone    NOT NULL,
@@ -13,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
         CREATE TABLE oracles (
             tx_id          character varying           NOT NULL PRIMARY KEY,
             height         integer                     NOT NULL,
-            stream_id      character varying           NOT NULL,
+            stream_id      oracle_stream_id            NOT NULL,
             timestamp      timestamp with time zone    NOT NULL,
             tx_timestamp   timestamp with time zone    NOT NULL,
             executed_timestamp timestamp with time zone    NOT NULL,
@@ -21,7 +23,7 @@ export async function up(knex: Knex): Promise<void> {
             CONSTRAINT oracles_blocks FOREIGN KEY (height) REFERENCES blocks(height) ON DELETE CASCADE
         );
 
-        CREATE INDEX IF NOT EXISTS oracles_timestamp ON public.oracles USING btree (timestamp);
+        CREATE INDEX IF NOT EXISTS oracles_timestamp ON public.oracles USING btree (stream_id, timestamp);
     `)
 }
 

@@ -1,9 +1,9 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common'
+import { Controller, Get, UseGuards, Query, HttpException } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
-import { Vault, Transaction, TransactionsQuery } from './entities/Transactions'
+import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery } from './entities/Transactions'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -14,6 +14,25 @@ export class UserController {
     private readonly userService: UserService,
   ) {}
 
+  @Get('/oracles')
+  @ApiOkResponse({ type: [Transaction] })
+  async getOracles(@AuthUser() user: IAuthUser, @Query() { streamId, limit, dateFrom, dateTo }: OraclesQuery) {
+    let dateFromParsed = dateFrom && Number(dateFrom)
+    let dateToParsed = dateTo && Number(dateTo)
+    const offset = 24 * 60 * 60 * 1000
+    if (!dateFromParsed) {
+      dateToParsed = dateToParsed || Date.now()
+      dateFromParsed = dateToParsed - offset
+    } else if (!dateToParsed || dateToParsed - dateFromParsed > offset) {
+      dateToParsed = dateFromParsed + offset
+    }
+
+    if (!['000010_latest', '000003_latest'].includes(streamId)) {
+      throw new HttpException(`No such stream id: ${streamId}. Allowed: '000010_latest', '000003_latest'`, 400)
+    }
+    return this.userService.getOracles(streamId, new Date(dateFromParsed), new Date(dateToParsed), limit)
+  }
+
   @Get('/transactions')
   @ApiOkResponse({ type: [Transaction] })
   async getTransactions(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
@@ -22,9 +41,16 @@ export class UserController {
 
   @Get('/vault')
   @ApiOkResponse({ type: Vault })
-  async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: TransactionsQuery) {
+  async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
     return this.userService.getCurrentVault(address)
   }
+
+  @Get('/balance')
+  @ApiOkResponse({ type: Vault })
+  async getCurrentBalance(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
+    return this.userService.getCurrentBalance(address)
+  }
+
 
   @Get('/vaults')
   @ApiOkResponse({ type: [Vault] })
