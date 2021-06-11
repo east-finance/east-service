@@ -29,7 +29,7 @@ export class VaultService {
       address,
       type,
       east_amount,
-      east_amount_relative: east_amount - oldBalance.eastAmount
+      east_amount_diff: east_amount - oldBalance.eastAmount
     })
   }
 
@@ -49,9 +49,9 @@ export class VaultService {
       west_amount: vault.westAmount,
       east_amount: vault.eastAmount,
       usdp_amount: vault.usdpAmount,
-      west_amount_relative: oldVault ? vault.westAmount - oldVault.westAmount : vault.westAmount,
-      east_amount_relative: oldVault ? vault.eastAmount - oldVault.eastAmount : vault.eastAmount,
-      usdp_amount_relative: oldVault ? vault.usdpAmount - oldVault.usdpAmount : vault.usdpAmount,
+      west_amount_diff: oldVault ? vault.westAmount - oldVault.westAmount : vault.westAmount,
+      east_amount_diff: oldVault ? vault.eastAmount - oldVault.eastAmount : vault.eastAmount,
+      usdp_amount_diff: oldVault ? vault.usdpAmount - oldVault.usdpAmount : vault.usdpAmount,
       west_rate: vault.westRate.value,
       usdp_rate: vault.usdpRate.value,
       west_rate_timestamp: vault.westRate.timestamp ? new Date(+vault.westRate.timestamp) : null,

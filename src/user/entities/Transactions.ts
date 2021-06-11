@@ -74,13 +74,13 @@ export class Transaction {
   transactionType: string
 
   @ApiProperty({ type: Number })
-  westAmountRelative: number
+  westAmountDiff: number
 
   @ApiProperty({ type: Number })
-  eastAmountRelative: number
+  eastAmountDiff: number
 
   @ApiProperty({ type: Number })
-  usdpAmountRelative: number
+  usdpAmountDiff: number
 
   @ApiProperty({ type: Object })
   info: object
@@ -134,7 +134,7 @@ export class Balance {
   eastAmount: number
 
   @ApiProperty({ type: Number })
-  eastAmountRelative: number
+  eastAmountDiff: number
 
   @ApiProperty({ enum: TransactionsTypes })
   type: string

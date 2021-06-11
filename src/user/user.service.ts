@@ -36,7 +36,7 @@ export class UserService {
       id: `${Tables.BalanceLog}.id`,
       address: `${Tables.BalanceLog}.address`,
       eastAmount: `${Tables.BalanceLog}.east_amount`,
-      eastAmountRelative: `${Tables.BalanceLog}.east_amount_relative`,
+      eastAmountDiff: `${Tables.BalanceLog}.east_amount_diff`,
       type: `${Tables.BalanceLog}.type`,
     }
 
@@ -121,9 +121,9 @@ export class UserService {
       callTimestamp: knex.raw(`coalesce(${inintTxs}.tx_timestamp, ${executedTxs}.tx_timestamp)`),
       status: knex.raw(`coalesce(${executedTxs}.status, ${inintTxs}.status)`),
       params: knex.raw(`coalesce(${inintTxs}.params, ${executedTxs}.params)`),
-      westAmountRelative: `${Tables.VaultLog}.west_amount_relative`,
-      usdpAmountRelative: `${Tables.VaultLog}.usdp_amount_relative`,
-      eastAmountRelative: knex.raw(`coalesce(${Tables.BalanceLog}.east_amount_relative, '0')`)
+      westAmountDiff: `${Tables.VaultLog}.west_amount_diff`,
+      usdpAmountDiff: `${Tables.VaultLog}.usdp_amount_diff`,
+      eastAmountDiff: knex.raw(`coalesce(${Tables.BalanceLog}.east_amount_diff, '0')`)
     }
 
     // TODO handle TxStatuses.Declined
