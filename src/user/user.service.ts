@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common'
 import { DB_CON_TOKEN, Tables, TxStatuses } from '../common/constants'
 import { Knex } from 'knex'
-import { Vault } from './entities/Transactions'
+import { Vault, Balance } from './entities/Transactions'
 
 
 export class UserService {
@@ -30,12 +30,13 @@ export class UserService {
     return req
   }
   
-  async getCurrentBalance(address: string): Promise<Vault> {
+  async getCurrentBalance(address: string): Promise<Balance> {
     const knex = this.knex
     const select = {
       id: `${Tables.BalanceLog}.id`,
       address: `${Tables.BalanceLog}.address`,
       eastAmount: `${Tables.BalanceLog}.east_amount`,
+      eastAmountRelative: `${Tables.BalanceLog}.east_amount_relative`,
       type: `${Tables.BalanceLog}.type`,
     }
 
@@ -45,7 +46,7 @@ export class UserService {
       .orderBy('id', 'desc')
       .limit(1)
 
-    return res
+    return res || { eastAmount: 0, address }
   }
 
   async getCurrentVault(address: string): Promise<Vault> {
@@ -120,8 +121,12 @@ export class UserService {
       callTimestamp: knex.raw(`coalesce(${inintTxs}.tx_timestamp, ${executedTxs}.tx_timestamp)`),
       status: knex.raw(`coalesce(${executedTxs}.status, ${inintTxs}.status)`),
       params: knex.raw(`coalesce(${inintTxs}.params, ${executedTxs}.params)`),
+      westAmountRelative: `${Tables.VaultLog}.west_amount_relative`,
+      usdpAmountRelative: `${Tables.VaultLog}.usdp_amount_relative`,
+      eastAmountRelative: knex.raw(`coalesce(${Tables.BalanceLog}.east_amount_relative, '0')`)
     }
 
+    // TODO handle TxStatuses.Declined
     const transactions = await knex.with('unique_txs', 
         knex(Tables.TransactionsLog)
           .select({
@@ -129,6 +134,7 @@ export class UserService {
             idmax: knex.raw('MAX(id)')
           })
           .where(`${Tables.TransactionsLog}.address`, address)
+          .andWhereNot('status', TxStatuses.Declined)
           .groupBy('tx_id')
           .orderBy(`idmax`, 'desc')
           .limit(limit)
@@ -143,6 +149,8 @@ export class UserService {
         this.on(`${executedTxs}.tx_id`, '=', 'unique_txs.tx_id')
           .andOn(knex.raw(`${executedTxs}.status = '${TxStatuses.Executed}'`))
       })
+      .leftJoin(`${Tables.BalanceLog}`, `${executedTxs}.id`, '=', `${Tables.BalanceLog}.id`)
+      .leftJoin(`${Tables.VaultLog}`, `${executedTxs}.id`, '=', `${Tables.VaultLog}.id`)
 
     return transactions
   }

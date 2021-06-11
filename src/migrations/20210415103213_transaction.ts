@@ -32,6 +32,9 @@ export async function up(knex: Knex): Promise<void> {
             west_amount      numeric                  NOT NULL,
             east_amount      numeric                  NOT NULL,
             usdp_amount      numeric                  NOT NULL,
+            west_amount_relative      numeric                  NOT NULL,
+            east_amount_relative      numeric                  NOT NULL,
+            usdp_amount_relative      numeric                  NOT NULL,
             west_rate        numeric,
             usdp_rate        numeric,
             west_rate_timestamp timestamp with time zone,
@@ -44,6 +47,7 @@ export async function up(knex: Knex): Promise<void> {
             id               integer                  PRIMARY KEY,
             address          character varying        NOT NULL,
             east_amount      numeric                  NOT NULL,
+            east_amount_relative      numeric                  NOT NULL,
             type             tx_type                  NOT NULL,
             CONSTRAINT balance_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );

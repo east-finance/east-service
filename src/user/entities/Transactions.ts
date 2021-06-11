@@ -73,6 +73,15 @@ export class Transaction {
   @ApiProperty({ enum: TransactionsTypes })
   transactionType: string
 
+  @ApiProperty({ type: Number })
+  westAmountRelative: number
+
+  @ApiProperty({ type: Number })
+  eastAmountRelative: number
+
+  @ApiProperty({ type: Number })
+  usdpAmountRelative: number
+
   @ApiProperty({ type: Object })
   info: object
 }
@@ -123,6 +132,9 @@ export class Balance {
 
   @ApiProperty({ type: Number })
   eastAmount: number
+
+  @ApiProperty({ type: Number })
+  eastAmountRelative: number
 
   @ApiProperty({ enum: TransactionsTypes })
   type: string

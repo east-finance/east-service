@@ -69,11 +69,12 @@ export class TransactionService {
       const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
       for (const result of balancesUpdated) {
         const parsed = result.key.split('_')
-        await sqlTx(Tables.BalanceLog).insert({
+        await this.vaultService.addBalance({
           id: txId,
           address: parsed[1],
           type: firstParam.key,
-          east_amount: result.value
+          east_amount: result.value,
+          sqlTx
         })
       }
     }
@@ -98,11 +99,12 @@ export class TransactionService {
       params: firstParam,
     }).returning('id')
 
-    await sqlTx(Tables.BalanceLog).insert({
+    await this.vaultService.addBalance({
       id: resFrom[0],
       address: addressFrom,
       type: TxTypes.transfer,
-      east_amount: balanceFrom.value
+      east_amount: balanceFrom.value,
+      sqlTx
     })
 
     const resTo = await sqlTx(Tables.TransactionsLog).insert({
@@ -116,11 +118,12 @@ export class TransactionService {
       params: firstParam,
     }).returning('id')
 
-    await sqlTx(Tables.BalanceLog).insert({
+    await this.vaultService.addBalance({
       id: resTo[0],
       address: addressTo,
       type: TxTypes.transfer,
-      east_amount: balanceTo.value
+      east_amount: balanceTo.value,
+      sqlTx
     })
   }
 
@@ -234,11 +237,8 @@ export class TransactionService {
       params: firstParam,
     }).returning('id')
 
-    const vaultId = (await this.userService.getCurrentVault(firstParam.address)).vaultId
-
     await this.vaultService.addVaultLog({
       txId: id,
-      vaultId,
       vault: {
         eastAmount: 0,
         westAmount: 0,
@@ -329,10 +329,10 @@ export class TransactionService {
       address = firstParam.address
     }
 
-    let vaultId = call.tx.callContractTransaction.id
+    let vaultId
 
-    if (txType !== TxTypes.mint) {
-      vaultId = (await this.userService.getCurrentVault(address)).vaultId
+    if (txType === TxTypes.mint) {
+      vaultId = call.tx.callContractTransaction.id
     }
 
     const vaultInfo = call.resultsList?.find(res => res.key === `${StateKeys.vault}_${address}`)
@@ -352,10 +352,10 @@ export class TransactionService {
     // save vault
     await this.vaultService.addVaultLog({
       txId: id,
-      vaultId,
       vault: vaultParsed,
       address,
-      sqlTx
+      sqlTx,
+      vaultId,
     })
 
     return id
