@@ -45,8 +45,6 @@ const envs = {
   // oracle streams
   WEST_ORACLE_STREAM: '000003_latest',
   USDP_ORACLE_STREAM: '000010_latest',
-  // max difference in milliseconds between oracle_data.timestamp and block.timestamp, used when issue EAST
-  EXPIRED_ORACLE_DATA: process.env.EXPIRED_ORACLE_DATA ? parseInt(process.env.EXPIRED_ORACLE_DATA) : 5 * 60 * 1000,
   // east collateral
   EAST_USDAP_PART: process.env.EAST_USDAP_PART ? parseFloat(process.env.EAST_USDAP_PART) : 0.5,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
