@@ -14,6 +14,9 @@
   NODE_GRPC_ADDRESSES - default: '51.178.69.5:6865'  
   NODE_API_KEY - default: 'we'  
 
+  Интервал для проверки вольтов для ликвидации(in ms):
+  LIQUIDATION_CHECK_INTERVAL - default 1000 * 60 * 5 (5 min)
+
   <b> posgres connection envs: </b>  
   POSTGRES_USER - default: 'postgres'  
   POSTGRES_PASSWORD - default: '123456'  
@@ -39,3 +42,4 @@
   ORACLE_CONTRACT_ID - default: 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV'  
   EAST_USDAP_PART - default: parseFloat(process.env.EAST_USDAP_PART) : 0.5  
   EAST_WEST_COLLATERAL - default: 2.5  
+  LIQUIDATION_COLLATERAL - default: 1.3  

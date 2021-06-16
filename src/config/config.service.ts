@@ -36,11 +36,11 @@ const envs = {
   
   // PROCESS ENVS:
   // если база пустая - подпись первого блока с которого начинать парсить блокчейн
-  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '5dz7JXB1iUdbHFLfeztLUaZtFk2S3iWefJDRp5E1UTJDyoeBsqFULri9ZeKHPykGtciVnSYUtLwEZ6PUAPg1zzMz',
+  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '5dCZbyj2uPEzo1ntY9kAR8mXJLAxSySyg7qdYM2Du5Ni6Rm4goxXz5sqV8QTe6N6oBPieHrpXUvKngDSxMURzPPg',
   // oracle contract id
-  ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV',
+  ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Hj49AiuzVAtagpPEys4EzVNf8zdqYR2TiZiyPkdcN8ay',
   // east contract id
-  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || 'GCgS6gagq2s3bEFaYq9nUSZV3nfV4cjQFpmxPCiNzuJH',
+  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '3AHnR1YFYow2igQ8vsPjugK1Vkndg2LAHGYxV46npVb7',
   USDAP_TOKEN_ID: process.env.USDAP_TOKEN_ID as string || '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR',
   // oracle streams
   WEST_ORACLE_STREAM: '000003_latest',
@@ -48,6 +48,9 @@ const envs = {
   // east collateral
   EAST_USDAP_PART: process.env.EAST_USDAP_PART ? parseFloat(process.env.EAST_USDAP_PART) : 0.5,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
+  LIQUIDATION_COLLATERAL: process.env.LIQUIDATION_COLLATERAL ? parseFloat(process.env.LIQUIDATION_COLLATERAL) : 1.3,
+
+  LIQUIDATION_CHECK_INTERVAL: process.env.LIQUIDATION_CHECK_INTERVAL ? parseInt(process.env.LIQUIDATION_CHECK_INTERVAL) : 1000 * 60 * 5,
 
 }
 

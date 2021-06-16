@@ -63,6 +63,9 @@ export class TransactionService {
       case TxTypes.transfer:
         await this.transfer(sqlTx, value, call, block)
         break
+      case TxTypes.liquidate:
+        await this.liquidate(sqlTx, value, call, block)
+        break
     }
     // default balance update
     if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
@@ -78,6 +81,32 @@ export class TransactionService {
         })
       }
     }
+  }
+
+  async liquidate(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+    const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
+    const liquidatedVault = JSON.parse(liquidatedResult.value)
+
+    const [id] = await sqlTx(Tables.TransactionsLog).insert({
+      tx_id: call.tx.callContractTransaction.id,
+      address: firstParam.address,
+      status: TxStatuses.Executed,
+      type: TxTypes.liquidate,
+      height: block.height,
+      executed_tx_id: call.id,
+      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+      params: firstParam,
+    }).returning('id')
+
+    await this.vaultService.addVaultLog({
+      txId: id,
+      vault: {
+        ...liquidatedVault,
+        isActive: false
+      },
+      address: firstParam.address,
+      sqlTx
+    })
   }
 
   async transfer(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
@@ -245,6 +274,7 @@ export class TransactionService {
         usdpAmount: 0,
         westRate: {},
         usdpRate: {},
+        isActive: false
       },
       address: firstParam.address,
       sqlTx

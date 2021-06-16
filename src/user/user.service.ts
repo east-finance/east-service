@@ -62,6 +62,7 @@ export class UserService {
       usdpRate: `${Tables.VaultLog}.usdp_rate`,
       westRateTimestamp: `${Tables.VaultLog}.west_rate_timestamp`,
       usdpRateTimestamp: `${Tables.VaultLog}.usdp_rate_timestamp`,
+      isActive: `${Tables.VaultLog}.is_active`,
       createdAt: `${Tables.VaultLog}.created_at`
     }
 
@@ -85,6 +86,7 @@ export class UserService {
       usdpAmount: `${Tables.VaultLog}.usdp_amount`,
       westRateTimestamp: `${Tables.VaultLog}.west_rate_timestamp`,
       usdpRateTimestamp: `${Tables.VaultLog}.usdp_rate_timestamp`,
+      isActive: `${Tables.VaultLog}.is_active`,
       createdAt: `${Tables.VaultLog}.created_at`
     }
 
@@ -151,7 +153,8 @@ export class UserService {
       })
       .leftJoin(`${Tables.BalanceLog}`, `${executedTxs}.id`, '=', `${Tables.BalanceLog}.id`)
       .leftJoin(`${Tables.VaultLog}`, `${executedTxs}.id`, '=', `${Tables.VaultLog}.id`)
-
+      .orderBy(`idmax`, 'desc')
+      
     return transactions
   }
 }

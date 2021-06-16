@@ -25,22 +25,20 @@ export class PersistService {
   }
 
 
-  async getLastOracles(sqlTx: any, blockTimestamp: number) {
-    const [ west ] = await (sqlTx || this.knex)(Tables.Oracles)
+  async getLastOracles(sqlTx?: any) {
+    const [ westRate ] = await (sqlTx || this.knex)(Tables.Oracles)
       .select('*')
       .where('stream_id', this.configService.envs.WEST_ORACLE_STREAM)
-      .andWhere('timestamp', '<=', new Date(blockTimestamp))
       .orderBy('timestamp', 'desc')
       .limit(1)
 
-    const [ usdp ] = await (sqlTx || this.knex)(Tables.Oracles)
+    const [ usdpRate ] = await (sqlTx || this.knex)(Tables.Oracles)
       .select('*')
       .where('stream_id', this.configService.envs.USDP_ORACLE_STREAM)
-      .andWhere('timestamp', '<=', new Date(blockTimestamp))
       .orderBy('timestamp', 'desc')
       .limit(1)
 
-    return { west, usdp }
+    return { westRate, usdpRate }
   }
 
   async saveBlock(tx: any, block: NodeBlock) {
@@ -53,21 +51,22 @@ export class PersistService {
   }
 
   async saveOracle(tx: any, incomingTx: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    const [ result ] = incomingTx.resultsList as any[]
-    if (result.key !== this.configService.envs.USDP_ORACLE_STREAM
-      && result.key !== this.configService.envs.WEST_ORACLE_STREAM) {
-      return
+    for (const result of incomingTx.resultsList || []) {
+      if (result.key !== this.configService.envs.USDP_ORACLE_STREAM
+        && result.key !== this.configService.envs.WEST_ORACLE_STREAM) {
+        continue
+      }
+      const { value, timestamp } = JSON.parse(result.value)
+      await tx(Tables.Oracles).insert({
+        tx_id: incomingTx.id,
+        height: block.height,
+        tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
+        executed_timestamp: new Date(incomingTx.timestamp as any),
+        timestamp: new Date(parseInt(timestamp)),
+        value,
+        stream_id: result.key
+      })
     }
-    const { value, timestamp } = JSON.parse(result.value)
-    await tx(Tables.Oracles).insert({
-      tx_id: incomingTx.id,
-      height: block.height,
-      tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
-      executed_timestamp: new Date(incomingTx.timestamp as any),
-      timestamp: new Date(parseInt(timestamp)),
-      value,
-      stream_id: result.key
-    })
   }
 
   getLastBlocksSignature = async () => {

@@ -17,7 +17,9 @@ export enum StateKeys {
   balance = 'balance',
   vault = 'vault',
   config = 'config',
-  exchange = 'exchange'
+  exchange = 'exchange',
+  liquidatedVault = 'liquidated_vault',
+  totalUsdap = 'total_usdap'
 }
 
 export interface ContractConfigParam {
@@ -62,7 +64,8 @@ export interface IVault {
   usdpAmount: number,
   westRate: Oracle,
   usdpRate: Oracle,
-  liquidated?: boolean
+  liquidated?: boolean,
+  isActive?: boolean
 }
 
 export interface BurnParam {

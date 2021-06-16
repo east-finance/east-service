@@ -8,6 +8,7 @@ import { TransactionService } from './transactions.service'
 import { DatabaseModule } from '../database/database.module'
 import { UserModule } from '../user/user.module'
 import { UserService } from '../user/user.service'
+import { LiquidationService } from './liquidation.service'
 
 
 @Module({
@@ -19,7 +20,8 @@ import { UserService } from '../user/user.service'
     PersistService,
     VaultService,
     TransactionService,
-    UserService
+    UserService,
+    LiquidationService
   ],
   imports: [
     DatabaseModule.forRoot(),

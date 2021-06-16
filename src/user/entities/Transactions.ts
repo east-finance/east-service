@@ -118,6 +118,9 @@ export class Vault {
   @ApiProperty({ type: Date })
   westRateTimestamp: Date
 
+  @ApiProperty({ type: Boolean })
+  isActive: boolean
+
   @ApiProperty({ type: String })
   createdAt: string
 }  

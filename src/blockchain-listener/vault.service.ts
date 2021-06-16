@@ -40,22 +40,24 @@ export class VaultService {
     sqlTx?: any,
     vaultId?: string
   }) {
+    const isActive = typeof vault.isActive === 'boolean' ? vault.isActive : true
     const oldVault = await this.userService.getCurrentVault(address)
     // TODO make some actions
     await (sqlTx || this.knex)(Tables.VaultLog).insert({
       id: txId,
       vault_id: vaultId || oldVault.vaultId,
       address,
-      west_amount: vault.westAmount,
-      east_amount: vault.eastAmount,
-      usdp_amount: vault.usdpAmount,
-      west_amount_diff: oldVault ? vault.westAmount - oldVault.westAmount : vault.westAmount,
-      east_amount_diff: oldVault ? vault.eastAmount - oldVault.eastAmount : vault.eastAmount,
-      usdp_amount_diff: oldVault ? vault.usdpAmount - oldVault.usdpAmount : vault.usdpAmount,
-      west_rate: vault.westRate.value,
-      usdp_rate: vault.usdpRate.value,
-      west_rate_timestamp: vault.westRate.timestamp ? new Date(+vault.westRate.timestamp) : null,
-      usdp_rate_timestamp: vault.usdpRate.timestamp ? new Date(+vault.usdpRate.timestamp) : null
+      west_amount: vault.westAmount || 0,
+      east_amount: vault.eastAmount || 0,
+      usdp_amount: vault.usdpAmount || 0,
+      west_amount_diff: oldVault ? (vault.westAmount || 0) - oldVault.westAmount : vault.westAmount,
+      east_amount_diff: oldVault ? (vault.eastAmount || 0) - oldVault.eastAmount : vault.eastAmount,
+      usdp_amount_diff: oldVault ? (vault.usdpAmount || 0) - oldVault.usdpAmount : vault.usdpAmount,
+      west_rate: vault.westRate && vault.westRate.value,
+      usdp_rate: vault.usdpRate && vault.usdpRate.value,
+      west_rate_timestamp: vault.westRate && vault.westRate.timestamp ? new Date(+vault.westRate.timestamp) : null,
+      usdp_rate_timestamp: vault.usdpRate && vault.usdpRate.timestamp ? new Date(+vault.usdpRate.timestamp) : null,
+      is_active: isActive
     })
   }
 }

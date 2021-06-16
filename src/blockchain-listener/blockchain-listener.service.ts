@@ -5,6 +5,7 @@ import { GrpcListener, ConfigRpc, NodeBlock } from '@wavesenterprise/grpc-listen
 import { PersistService } from './persist.service'
 import { TransactionService } from './transactions.service'
 import { WE_SDK_PROVIDER_TOKEN } from '../common/constants'
+import { LiquidationService } from './liquidation.service'
 
 const guard = <T>(obj: any): obj is T => true
 
@@ -17,6 +18,7 @@ export class BlockchainListenerService {
 
   constructor (
     private readonly configService: ConfigService,
+    private readonly liquidationService: LiquidationService,
     private readonly persistService: PersistService,
     @Inject(WE_SDK_PROVIDER_TOKEN) private readonly weSdk: WeSdk,
     private readonly transactionService: TransactionService,
@@ -48,8 +50,13 @@ export class BlockchainListenerService {
       rollbackLastBlock: this.persistService.rollbackLastBlock,
       rollbackToBlockSignature: this.persistService.rollbackToBlockSignature,
       receiveTxs: this.receiveTxs,
-      receiveCriticalError: this.receiveError
+      receiveCriticalError: this.receiveError,
+      onHistorySynced: this.onHistorySynced
     })
+  }
+
+  onHistorySynced = () => {
+    setInterval(() => this.liquidationService.checkVaults(), this.configService.envs.LIQUIDATION_CHECK_INTERVAL)
   }
 
   receiveTxs = async (block: NodeBlock, txs: ParsedIncomingGrpcTxType[]) => {

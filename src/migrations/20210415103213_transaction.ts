@@ -29,6 +29,7 @@ export async function up(knex: Knex): Promise<void> {
             id               integer                  PRIMARY KEY,
             vault_id         character varying        NOT NULL,
             address          character varying        NOT NULL,
+            is_active        boolean                  DEFAULT true NOT NULL,
             west_amount      numeric                  NOT NULL,
             east_amount      numeric                  NOT NULL,
             usdp_amount      numeric                  NOT NULL,
@@ -42,6 +43,8 @@ export async function up(knex: Knex): Promise<void> {
             created_at       timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT vault_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );
+
+        CREATE INDEX vault_log_address ON vault_log (address, id DESC);
 
         CREATE TABLE balance_log (
             id               integer                  PRIMARY KEY,
