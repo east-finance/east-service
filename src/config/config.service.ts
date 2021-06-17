@@ -70,6 +70,19 @@ export class ConfigService {
     }
   }
 
+  getAuthOptions() {
+    if (!this.envs.NODE_API_KEY && !this.envs.SERVICE_TOKEN) {
+      throw new Error(`Required env NODE_API_KEY or SERVICE_TOKEN are missing`)
+    }
+
+    return this.envs.NODE_API_KEY ? {
+      nodeApiKey: this.envs.NODE_API_KEY
+    } : {
+      serviceToken: this.envs.SERVICE_TOKEN as string,
+      authServiceAddress: this.envs.AUTH_URL
+    }
+  }
+
   getGrpcAddresses() {
     return envs.NODE_GRPC_ADDRESS.split(',')
   }

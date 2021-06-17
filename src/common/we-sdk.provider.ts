@@ -9,6 +9,7 @@ export const WeSdkFactory = {
   provide: WE_SDK_PROVIDER_TOKEN,
   useFactory: async (configService: ConfigService) => {
     const nodeGRPCAddress = configService.getGrpcAddresses()
+
     const config = {
       addresses: nodeGRPCAddress,
       logger: {
@@ -16,7 +17,7 @@ export const WeSdkFactory = {
         error: Logger.error.bind(Logger),
         warn: Logger.warn.bind(Logger)
       },
-      auth: { nodeApiKey: configService.envs.NODE_API_KEY }
+      auth: configService.getAuthOptions()
     }
 
     const listener = new GrpcListener(config)
