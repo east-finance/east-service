@@ -92,18 +92,15 @@ export class UserService {
 
     return knex.with('last_vaults', 
         knex(Tables.VaultLog)
-          .select({
-            vault_id: 'vault_id',
-            idmax: knex.raw('MAX(id)')
-          })
+          .select('vault_id', 'id')
           .where({address})
-          .groupBy('vault_id')
-          .orderBy(`idmax`, 'desc')
+          .distinctOn('vault_id')
+          .orderBy(['vault_id', { column: 'id', order: 'desc' }])
           .limit(limit)
           .offset(offset)
       ).select(select)
       .from('last_vaults')
-      .leftJoin(Tables.VaultLog, `last_vaults.idmax`, `${Tables.VaultLog}.id`)
+      .leftJoin(Tables.VaultLog, `last_vaults.id`, `${Tables.VaultLog}.id`)
       .orderBy('id', 'desc')
   }
 
@@ -131,14 +128,11 @@ export class UserService {
     // TODO handle TxStatuses.Declined
     const transactions = await knex.with('unique_txs', 
         knex(Tables.TransactionsLog)
-          .select({
-            tx_id: 'tx_id',
-            idmax: knex.raw('MAX(id)')
-          })
-          .where(`${Tables.TransactionsLog}.address`, address)
+          .select('id', 'tx_id')
+          .where({address})
           .andWhereNot('status', TxStatuses.Declined)
-          .groupBy('tx_id')
-          .orderBy(`idmax`, 'desc')
+          .distinctOn('tx_id')
+          .orderBy(['tx_id', { column: 'id', order: 'desc' }])
           .limit(limit)
           .offset(offset)
       ).select(select)
@@ -146,15 +140,17 @@ export class UserService {
       .leftJoin(`${Tables.TransactionsLog} as ${inintTxs}`, function() {
         this.on(`${inintTxs}.tx_id`, '=', `unique_txs.tx_id`)
           .andOn(knex.raw(`${inintTxs}.status = '${TxStatuses.Init}'`))
+          .andOn(knex.raw(`${inintTxs}.address = ?`, [address]))
       })
       .leftJoin(`${Tables.TransactionsLog} as ${executedTxs}`, function() {
         this.on(`${executedTxs}.tx_id`, '=', 'unique_txs.tx_id')
           .andOn(knex.raw(`${executedTxs}.status = '${TxStatuses.Executed}'`))
+          .andOn(knex.raw(`${executedTxs}.address = ?`, [address]))
       })
       .leftJoin(`${Tables.BalanceLog}`, `${executedTxs}.id`, '=', `${Tables.BalanceLog}.id`)
       .leftJoin(`${Tables.VaultLog}`, `${executedTxs}.id`, '=', `${Tables.VaultLog}.id`)
-      .orderBy(`idmax`, 'desc')
-      
+      .orderBy(`unique_txs.id`, 'desc')
+    
     return transactions
   }
 }

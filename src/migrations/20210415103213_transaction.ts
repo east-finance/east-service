@@ -25,6 +25,8 @@ export async function up(knex: Knex): Promise<void> {
             UNIQUE(tx_id, address, status)
         );
 
+        CREATE INDEX transactions_log_tx_ids ON transactions_log (tx_id, id DESC, address, status);
+
         CREATE TABLE vault_log (
             id               integer                  PRIMARY KEY,
             vault_id         character varying        NOT NULL,
@@ -44,7 +46,7 @@ export async function up(knex: Knex): Promise<void> {
             CONSTRAINT vault_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );
 
-        CREATE INDEX vault_log_address ON vault_log (address, id DESC);
+        CREATE INDEX vault_log_address ON vault_log (vault_id, id DESC address);
 
         CREATE TABLE balance_log (
             id               integer                  PRIMARY KEY,
