@@ -26,12 +26,13 @@ const envs = {
   PG_SSL_CERT_FILE_PATH: process.env.PG_SSL_CERT_FILE_PATH,
   NODE_ADDRESS: process.env.NODE_ADDRESS || 'https://carter.welocal.dev/node-0',
   NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '51.178.69.5:6865',
-  NODE_API_KEY: process.env.NODE_API_KEY || 'we',
+  NODE_API_KEY: process.env.NODE_API_KEY,
   EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
   EAST_SERVICE_PRIVATE_KEY: process.env.EAST_SERVICE_PRIVATE_KEY || 'DRhyQvDKvaJeuMbhQR9gdyT8dMyoaHry23SifTNhN1qf',
 
   // AUTH
   AUTH_URL,
+  SERVICE_TOKEN: process.env.SERVICE_TOKEN,
   PUBLIC_KEY,
   
   // PROCESS ENVS:

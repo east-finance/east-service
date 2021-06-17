@@ -12,7 +12,8 @@
   AUTH_URL - default: 'https://carter.welocal.dev/authServiceAddress'  
   NODE_ADDRESS - default: 'https://carter.welocal.dev/node-0'  
   NODE_GRPC_ADDRESSES - default: '51.178.69.5:6865'  
-  NODE_API_KEY - default: 'we'  
+  NODE_API_KEY  
+  SERVICE_TOKEN  
 
   Интервал для проверки вольтов для ликвидации(in ms):
   LIQUIDATION_CHECK_INTERVAL - default 1000 * 60 * 5 (5 min)

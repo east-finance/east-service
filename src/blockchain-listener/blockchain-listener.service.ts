@@ -24,6 +24,11 @@ export class BlockchainListenerService {
     private readonly transactionService: TransactionService,
   ) {
     const nodeAddress = this.configService.getGrpcAddresses()
+
+    if (!configService.envs.NODE_API_KEY && !configService.envs.SERVICE_TOKEN) {
+      throw new Error(`Required env NODE_API_KEY or SERVICE_TOKEN are missing`)
+    }
+
     this.config = {
       addresses: nodeAddress,
       logger: {
@@ -31,8 +36,11 @@ export class BlockchainListenerService {
         error: Logger.error.bind(Logger),
         warn: Logger.warn.bind(Logger)
       },
-      auth: {
+      auth: configService.envs.NODE_API_KEY ? {
         nodeApiKey: configService.envs.NODE_API_KEY
+      } : {
+        serviceToken: configService.envs.SERVICE_TOKEN as string,
+        authServiceAddress: configService.envs.AUTH_URL
       },
       asyncGrpc: false,
       getLastBlocksSignature: this.persistService.getLastBlocksSignature,
