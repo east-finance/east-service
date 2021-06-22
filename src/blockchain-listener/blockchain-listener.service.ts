@@ -67,38 +67,44 @@ export class BlockchainListenerService {
         for (const index in txs) {
           const incomingTx = txs[index]
           // RECEIVE CALL ORACLE CONTRACT
-          if (incomingTx.grpcType === 'executedContractTransaction' &&
-            guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(incomingTx) && incomingTx.tx) {
-            const subTx = incomingTx.tx
-            if (subTx.callContractTransaction) {
-              if (subTx.callContractTransaction.contractId === this.configService.envs.ORACLE_CONTRACT_ID) {
-                await this.persistService.saveOracle(trx, incomingTx, block)
-              }
-              
-              if (subTx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID) {
-                await this.transactionService.receiveCallEastContract(trx, incomingTx, block)
-              }
-            }
-          }
-
-          // RECEIVE TRANSFER - ISSUE EAST TO ADDRESS
-          if (incomingTx.grpcType === 'atomicTransaction' &&
-            guard<ParsedIncomingFullGrpcTxType['atomicTransaction']>(incomingTx)) {
-            const length = incomingTx.transactionsList?.length
-            if (length) {
-              for (let i = 0; i < length; i++) {
-                const tx = (incomingTx.transactionsList as any[])[i]
-
-                if (tx.grpcType === 'executedContractTransaction'
-                  && guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(tx) 
-                  && tx.tx
-                  && tx.tx.callContractTransaction
-                  && tx.tx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID
-                ) {
-                  await this.transactionService.receiveCallEastContract(trx, tx, block)
+          try {
+            if (incomingTx.grpcType === 'executedContractTransaction' &&
+              guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(incomingTx) && incomingTx.tx) {
+              const subTx = incomingTx.tx
+              if (subTx.callContractTransaction) {
+                if (subTx.callContractTransaction.contractId === this.configService.envs.ORACLE_CONTRACT_ID) {
+                  await this.persistService.saveOracle(trx, incomingTx, block)
+                }
+                
+                if (subTx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID) {
+                  await this.transactionService.receiveCallEastContract(trx, incomingTx, block)
                 }
               }
             }
+
+            // RECEIVE TRANSFER - ISSUE EAST TO ADDRESS
+            if (incomingTx.grpcType === 'atomicTransaction' &&
+              guard<ParsedIncomingFullGrpcTxType['atomicTransaction']>(incomingTx)) {
+              const length = incomingTx.transactionsList?.length
+              if (length) {
+                for (let i = 0; i < length; i++) {
+                  const tx = (incomingTx.transactionsList as any[])[i]
+
+                  if (tx.grpcType === 'executedContractTransaction'
+                    && guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(tx) 
+                    && tx.tx
+                    && tx.tx.callContractTransaction
+                    && tx.tx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID
+                  ) {
+                    await this.transactionService.receiveCallEastContract(trx, tx, block)
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            Logger.error('Catch error, while process incoming tx:')
+            Logger.error(JSON.stringify(incomingTx))
+            throw err
           }
         }
       } catch(err) {
