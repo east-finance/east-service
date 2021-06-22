@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
 import {
   DB_CON_TOKEN,
@@ -196,13 +196,17 @@ export class TransactionService {
         tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
         params: JSON.stringify(firstParam),
       })
-      return;
+      return
     }
 
     let returnedAmount = vault.westAmount - expectedWestAmount
     if (Number(firstParam.amount) < returnedAmount) {
       returnedAmount = Number(firstParam.amount)
     }
+
+    Logger.error(`${vault.westAmount} ; ${expectedWestAmount} 
+    ; ${firstParam.amount} ; ${Number(firstParam.amount)}
+    ; ${returnedAmount} : ${Math.round(returnedAmount * 100000000)}`)
 
     const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
       recipient: address,
@@ -231,7 +235,7 @@ export class TransactionService {
       atomicBadge: {
         trustedSender: this.ownerAddress
       }
-    });
+    })
     
     const transactions = [overpayTransfer, overpayCall]
 
