@@ -183,7 +183,13 @@ export class TransactionService {
     const westExpectedUsdValue = vault.eastAmount * westPart * usdapRate.value * westCollateral
     const expectedWestAmount = westExpectedUsdValue / westRate.value
 
-    if (expectedWestAmount >= vault.westAmount) {
+    let returnedAmount = vault.westAmount - expectedWestAmount
+    if (Number(firstParam.amount) < returnedAmount) {
+      returnedAmount = Number(firstParam.amount)
+    }
+    returnedAmount = Math.round(returnedAmount * 100000000)
+
+    if (returnedAmount <= 0) {
       await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
         address,
@@ -199,19 +205,10 @@ export class TransactionService {
       return
     }
 
-    let returnedAmount = vault.westAmount - expectedWestAmount
-    if (Number(firstParam.amount) < returnedAmount) {
-      returnedAmount = Number(firstParam.amount)
-    }
-
-    Logger.error(`${vault.westAmount} ; ${expectedWestAmount} 
-    ; ${firstParam.amount} ; ${Number(firstParam.amount)}
-    ; ${returnedAmount} : ${Math.round(returnedAmount * 100000000)}`)
-
     const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
       recipient: address,
       assetId: '',
-      amount: Math.round(returnedAmount * 100000000),
+      amount: returnedAmount,
       timestamp: Date.now(),
       attachment: call.tx.callContractTransaction.id,
       atomicBadge: {
