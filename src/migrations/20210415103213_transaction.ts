@@ -13,6 +13,7 @@ export async function up(knex: Knex): Promise<void> {
             status           tx_status                NOT NULL,
             type             tx_type                  NOT NULL,
             height           integer                  NOT NULL,
+            error            character varying,
             request_tx_id    character varying,
             request_tx_timestamp timestamp with time zone,
             request_params   jsonb,

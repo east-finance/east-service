@@ -41,7 +41,7 @@ export class PersistService {
     return { westRate, usdpRate }
   }
 
-  async saveBlock(tx: any, block: NodeBlock) {
+  async saveBlock(tx: Knex.Transaction<any, any[]>, block: NodeBlock) {
     await tx(Tables.Blocks).insert({
       height: block.height,
       timestamp: new Date(block.timestamp),
