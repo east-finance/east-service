@@ -17,20 +17,23 @@ export class UserController {
   @Get('/oracles')
   @ApiOkResponse({ type: [Transaction] })
   async getOracles(@AuthUser() user: IAuthUser, @Query() { streamId, limit, dateFrom, dateTo }: OraclesQuery) {
-    let dateFromParsed = dateFrom && Number(dateFrom)
-    let dateToParsed = dateTo && Number(dateTo)
+    let dateFromParsed = dateFrom && Number(dateFrom) as any
+    let dateToParsed = dateTo && Number(dateTo) as any
     const offset = 24 * 60 * 60 * 1000
-    if (!dateFromParsed) {
-      dateToParsed = dateToParsed || Date.now()
-      dateFromParsed = dateToParsed - offset
-    } else if (!dateToParsed || dateToParsed - dateFromParsed > offset) {
-      dateToParsed = dateFromParsed + offset
+
+    if (!limit) {
+      if (!dateFromParsed) {
+        dateToParsed = dateToParsed || Date.now()
+        dateFromParsed = dateToParsed - offset
+      } else if (!dateToParsed || dateToParsed - dateFromParsed > offset) {
+        dateToParsed = dateFromParsed + offset
+      }
     }
 
     if (!['000010_latest', '000003_latest'].includes(streamId)) {
       throw new HttpException(`No such stream id: ${streamId}. Allowed: '000010_latest', '000003_latest'`, 400)
     }
-    return this.userService.getOracles(streamId, new Date(dateFromParsed), new Date(dateToParsed), limit)
+    return this.userService.getOracles(streamId, dateFromParsed && new Date(dateFromParsed), dateToParsed && new Date(dateToParsed), limit)
   }
 
   @Get('/transactions')
