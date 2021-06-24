@@ -57,11 +57,11 @@ export class UserService {
       address: `${Tables.VaultLog}.address`,
       westAmount: `${Tables.VaultLog}.west_amount`,
       eastAmount: `${Tables.VaultLog}.east_amount`,
-      usdpAmount: `${Tables.VaultLog}.usdp_amount`,
+      rwaAmount: `${Tables.VaultLog}.rwa_amount`,
       westRate: `${Tables.VaultLog}.west_rate`,
-      usdpRate: `${Tables.VaultLog}.usdp_rate`,
+      rwaRate: `${Tables.VaultLog}.rwa_rate`,
       westRateTimestamp: `${Tables.VaultLog}.west_rate_timestamp`,
-      usdpRateTimestamp: `${Tables.VaultLog}.usdp_rate_timestamp`,
+      rwaRateTimestamp: `${Tables.VaultLog}.rwa_rate_timestamp`,
       isActive: `${Tables.VaultLog}.is_active`,
       createdAt: `${Tables.VaultLog}.created_at`
     }
@@ -83,9 +83,9 @@ export class UserService {
       address: `${Tables.VaultLog}.address`,
       westAmount: `${Tables.VaultLog}.west_amount`,
       eastAmount: `${Tables.VaultLog}.east_amount`,
-      usdpAmount: `${Tables.VaultLog}.usdp_amount`,
+      rwaAmount: `${Tables.VaultLog}.rwa_amount`,
       westRateTimestamp: `${Tables.VaultLog}.west_rate_timestamp`,
-      usdpRateTimestamp: `${Tables.VaultLog}.usdp_rate_timestamp`,
+      rwaRateTimestamp: `${Tables.VaultLog}.rwa_rate_timestamp`,
       isActive: `${Tables.VaultLog}.is_active`,
       createdAt: `${Tables.VaultLog}.created_at`
     }
@@ -121,7 +121,7 @@ export class UserService {
       status: knex.raw(`coalesce(${executedTxs}.status, ${inintTxs}.status)`),
       params: knex.raw(`coalesce(${inintTxs}.params, ${executedTxs}.params)`),
       westAmountDiff: `${Tables.VaultLog}.west_amount_diff`,
-      usdpAmountDiff: `${Tables.VaultLog}.usdp_amount_diff`,
+      rwaAmountDiff: `${Tables.VaultLog}.rwa_amount_diff`,
       eastAmountDiff: knex.raw(`coalesce(${Tables.BalanceLog}.east_amount_diff, '0')`)
     }
 

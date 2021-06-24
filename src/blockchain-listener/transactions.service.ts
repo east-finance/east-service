@@ -173,7 +173,7 @@ export class TransactionService {
 
     const usdapRateKey = await this.weSdk.API.Node.contracts.getKey(
       this.configService.envs.ORACLE_CONTRACT_ID,
-      this.configService.envs.USDP_ORACLE_STREAM
+      this.configService.envs.RWA_ORACLE_STREAM
     ) as any
     const usdapRate = JSON.parse(usdapRateKey.value)
     
@@ -272,9 +272,9 @@ export class TransactionService {
       vault: {
         eastAmount: 0,
         westAmount: 0,
-        usdpAmount: 0,
+        rwaAmount: 0,
         westRate: {},
-        usdpRate: {},
+        rwaRate: {},
         isActive: false
       },
       address: firstParam.address,
@@ -298,10 +298,10 @@ export class TransactionService {
       }
     })
   
-    const usdpTransfer = this.weSdk.API.Transactions.Transfer.V3({
+    const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
       recipient: address,
       assetId: this.configService.envs.USDAP_TOKEN_ID,
-      amount: Math.round(vault.usdpAmount * 100000000),
+      amount: Math.round(vault.rwaAmount * 100000000),
       timestamp: Date.now(),
       attachment: '',
       atomicBadge: {
@@ -312,7 +312,7 @@ export class TransactionService {
     const params = {
       address,
       westTransferId: await westTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
-      usdpTransferId: await usdpTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+      rwaTransferId: await rwaTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
       requestId: call.tx.callContractTransaction.id
     }
     
@@ -332,7 +332,7 @@ export class TransactionService {
     
     const atomicTx = this.weSdk.API.Transactions.Atomic.V1({
       timestamp: Date.now(),
-      transactions: [westTransfer, usdpTransfer, closeCall]
+      transactions: [westTransfer, rwaTransfer, closeCall]
     })
 
     await this.weSdk.API.Transactions.broadcastAtomicGrpc(

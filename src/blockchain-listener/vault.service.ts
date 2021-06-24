@@ -8,7 +8,7 @@ import { Knex } from 'knex'
 @Injectable()
 export class VaultService {
   maxDiff: number
-  usdpPartInPosition: number
+  rwaPartInPosition: number
 
   constructor (
     @Inject(DB_CON_TOKEN) readonly knex: Knex,
@@ -49,14 +49,14 @@ export class VaultService {
       address,
       west_amount: vault.westAmount || 0,
       east_amount: vault.eastAmount || 0,
-      usdp_amount: vault.usdpAmount || 0,
+      rwa_amount: vault.rwaAmount || 0,
       west_amount_diff: oldVault ? (vault.westAmount || 0) - oldVault.westAmount : vault.westAmount,
       east_amount_diff: oldVault ? (vault.eastAmount || 0) - oldVault.eastAmount : vault.eastAmount,
-      usdp_amount_diff: oldVault ? (vault.usdpAmount || 0) - oldVault.usdpAmount : vault.usdpAmount,
+      rwa_amount_diff: oldVault ? (vault.rwaAmount || 0) - oldVault.rwaAmount : vault.rwaAmount,
       west_rate: vault.westRate && vault.westRate.value,
-      usdp_rate: vault.usdpRate && vault.usdpRate.value,
+      rwa_rate: vault.rwaRate && vault.rwaRate.value,
       west_rate_timestamp: vault.westRate && vault.westRate.timestamp ? new Date(+vault.westRate.timestamp) : null,
-      usdp_rate_timestamp: vault.usdpRate && vault.usdpRate.timestamp ? new Date(+vault.usdpRate.timestamp) : null,
+      rwa_rate_timestamp: vault.rwaRate && vault.rwaRate.timestamp ? new Date(+vault.rwaRate.timestamp) : null,
       is_active: isActive
     })
   }

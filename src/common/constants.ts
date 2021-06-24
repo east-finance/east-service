@@ -25,7 +25,7 @@ export enum StateKeys {
 export interface ContractConfigParam {
   oracleContractId: string,
   oracleTimestampMaxDiff: number,
-  usdpPart: number,
+  rwaPart: number,
   westCollateral: number,
   liquidationCollateral: number,
   minHoldTime: number,
@@ -61,9 +61,9 @@ export interface Oracle {
 export interface IVault {
   eastAmount: number,
   westAmount: number,
-  usdpAmount: number,
+  rwaAmount: number,
   westRate: Oracle,
-  usdpRate: Oracle,
+  rwaRate: Oracle,
   liquidated?: boolean,
   isActive?: boolean
 }

@@ -80,7 +80,7 @@ export class Transaction {
   eastAmountDiff: number
 
   @ApiProperty({ type: Number })
-  usdpAmountDiff: number
+  rwaAmountDiff: number
 
   @ApiProperty({ type: Object })
   info: object
@@ -104,16 +104,16 @@ export class Vault {
   eastAmount: number
 
   @ApiProperty({ type: Number })
-  usdpAmount: number
+  rwaAmount: number
 
   @ApiProperty({ type: Number })
   westRate: number
 
   @ApiProperty({ type: Number })
-  usdpRate: number
+  rwaRate: number
 
   @ApiProperty({ type: Date })
-  usdpRateTimestamp: Date
+  rwaRateTimestamp: Date
 
   @ApiProperty({ type: Date })
   westRateTimestamp: Date
