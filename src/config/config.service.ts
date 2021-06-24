@@ -4,6 +4,7 @@ import { version } from '../../package.json'
 import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
 
+config()
 
 const AUTH_URL = process.env.AUTH_URL || 'https://carter.welocal.dev/authServiceAddress'
 let PUBLIC_KEY: string = ''
@@ -61,7 +62,6 @@ export class ConfigService {
   readonly publicKey: string = PUBLIC_KEY
 
   constructor (dbName?: string) {
-    config()
     if (dbName) {
       this.dbName = dbName
     }
