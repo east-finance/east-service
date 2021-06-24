@@ -10,7 +10,7 @@ export class UserService {
     @Inject(DB_CON_TOKEN) readonly knex: Knex
   ) {}
   
-  getOracles(stream: string, dateFrom: Date, dateTo: Date, limit?: number) {
+  getOracles(stream: string, dateFrom?: Date, dateTo?: Date, limit?: number) {
     const knex = this.knex
     const select = {
       value: knex.raw(`"${Tables.Oracles}"."value"`),
@@ -19,9 +19,16 @@ export class UserService {
 
     const req = knex(Tables.Oracles)
       .select(select)
-      .whereBetween('timestamp', [dateFrom, dateTo])
       .andWhere({stream_id: stream})
       .orderBy('timestamp', 'desc')
+
+    if (dateFrom)  {
+      req.andWhere('timestamp', '>', dateFrom)
+    }
+
+    if (dateTo)  {
+      req.andWhere('timestamp', '<', dateTo)
+    }
 
     if (limit) {
       req.limit(limit)

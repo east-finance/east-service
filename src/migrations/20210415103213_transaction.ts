@@ -1,30 +1,8 @@
-import { Knex } from "knex";
+import { Knex } from "knex"
 
 
 export async function up(knex: Knex): Promise<void> {
     return knex.raw(`
-        CREATE TYPE oracle_stream_id AS ENUM ('000010_latest', '000003_latest');
-
-        CREATE TABLE blocks (
-            height         integer                     NOT NULL PRIMARY KEY,
-            timestamp      timestamp with time zone    NOT NULL,
-            generator      character varying           NOT NULL,
-            signature      character varying           NOT NULL
-        );
-
-        CREATE TABLE oracles (
-            tx_id          character varying           NOT NULL,
-            height         integer                     NOT NULL,
-            stream_id      oracle_stream_id            NOT NULL,
-            timestamp      timestamp with time zone    NOT NULL,
-            tx_timestamp   timestamp with time zone    NOT NULL,
-            executed_timestamp timestamp with time zone    NOT NULL,
-            value          numeric                     NOT NULL,
-            CONSTRAINT oracles_blocks FOREIGN KEY (height) REFERENCES blocks(height) ON DELETE CASCADE,
-            PRIMARY KEY (tx_id, stream_id)
-        );
-
-        CREATE INDEX IF NOT EXISTS oracles_timestamp ON public.oracles USING btree (stream_id, timestamp);
         CREATE TYPE tx_type AS ENUM ('mint', 'transfer', 'close', 'reissue', 'supply', 'close_init', 'liquidate', 'update_config', 'claim_overpay_init', 'claim_overpay');
         CREATE TYPE tx_status AS ENUM ('init', 'executed', 'declined');
 
@@ -57,14 +35,14 @@ export async function up(knex: Knex): Promise<void> {
             is_active        boolean                  DEFAULT true NOT NULL,
             west_amount      numeric                  NOT NULL,
             east_amount      numeric                  NOT NULL,
-            rwa_amount      numeric                  NOT NULL,
+            usdp_amount      numeric                  NOT NULL,
             west_amount_diff      numeric                  NOT NULL,
             east_amount_diff      numeric                  NOT NULL,
-            rwa_amount_diff      numeric                  NOT NULL,
+            usdp_amount_diff      numeric                  NOT NULL,
             west_rate        numeric,
-            rwa_rate        numeric,
+            usdp_rate        numeric,
             west_rate_timestamp timestamp with time zone,
-            rwa_rate_timestamp timestamp with time zone,
+            usdp_rate_timestamp timestamp with time zone,
             created_at       timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT vault_log_tx_id FOREIGN KEY (id) REFERENCES transactions_log(id) ON DELETE CASCADE
         );
@@ -88,5 +66,5 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 
-export async function down(knex: Knex): Promise<void> {
-}
+export async function down(knex: Knex): Promise<void> {}
+

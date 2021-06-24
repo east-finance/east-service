@@ -31,7 +31,7 @@ export class TransactionService {
     this.ownerAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
   }
 
-  async receiveCallEastContract(sqlTx: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async receiveCallEastContract(sqlTx: Knex.Transaction<any, any[]>, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     const firstParam = call.tx.callContractTransaction.paramsList && call.tx.callContractTransaction.paramsList[0]
     if (!firstParam) {
       return
@@ -83,7 +83,7 @@ export class TransactionService {
     }
   }
 
-  async liquidate(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async liquidate(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
     const liquidatedVault = JSON.parse(liquidatedResult.value)
 
@@ -109,7 +109,7 @@ export class TransactionService {
     })
   }
 
-  async transfer(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async transfer(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     const addressFrom = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
     const addressTo = firstParam.to
 
@@ -156,13 +156,31 @@ export class TransactionService {
     })
   }
 
-  async сlaimOverpayInit(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async сlaimOverpayInit(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     const address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
     
     const vaultKey = await this.weSdk.API.Node.contracts.getKey(
       this.configService.envs.EAST_CONTRACT_ID,
       `${StateKeys.vault}_${address}`
     ) as any
+
+    if (!vaultKey.value) {
+      await sqlTx(Tables.TransactionsLog).insert({
+        tx_id: call.tx.callContractTransaction.id,
+        address,
+        status: TxStatuses.Declined,
+        type: TxTypes.claim_overpay_init,
+        request_tx_id: call.tx.callContractTransaction.id,
+        request_tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as number),
+        request_params: {},
+        height: block.height,
+        tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+        params: JSON.stringify(firstParam),
+        error: `Vault for address ${address} not exists`
+      })
+      return
+    }
+
     const vault = JSON.parse(vaultKey.value) as IVault
 
     const westRateKey = await this.weSdk.API.Node.contracts.getKey(
@@ -201,6 +219,7 @@ export class TransactionService {
         height: block.height,
         tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
         params: JSON.stringify(firstParam),
+        error: `No WEST to return, westRate: ${westRate}`
       })
       return
     }
@@ -255,7 +274,7 @@ export class TransactionService {
     })
   }
 
-  async close(sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async close(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     const [id] = await sqlTx(Tables.TransactionsLog).insert({
       tx_id: call.tx.callContractTransaction.id,
       address: firstParam.address,
@@ -284,7 +303,7 @@ export class TransactionService {
     return id
   }
 
-  async initClose(sqlTx: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async initClose(sqlTx: Knex.Transaction<any, any[]>, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     const address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
     const vault = await this.userService.getCurrentVault(address)
 
@@ -354,7 +373,7 @@ export class TransactionService {
     })
   }
 
-  async receiveTypicalTx(txType: TxTypes, sqlTx: any, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+  async receiveTypicalTx(txType: TxTypes, sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     let address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
     if (txType === TxTypes.claim_overpay) {
       address = firstParam.address
