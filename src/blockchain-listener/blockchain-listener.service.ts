@@ -37,7 +37,8 @@ export class BlockchainListenerService {
       getLastBlocksSignature: this.persistService.getLastBlocksSignature,
       filters: {
         tx_types: [ 105, TRANSACTION_TYPES.Transfer, TRANSACTION_TYPES.Atomic ]
-      }
+      },
+      txLifetime: configService.getTxLifetime()
     }
 
     this.eastTransferAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
@@ -75,7 +76,7 @@ export class BlockchainListenerService {
                 if (subTx.callContractTransaction.contractId === this.configService.envs.ORACLE_CONTRACT_ID) {
                   await this.persistService.saveOracle(trx, incomingTx, block)
                 }
-                
+
                 if (subTx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID) {
                   await this.transactionService.receiveCallEastContract(trx, incomingTx, block)
                 }
@@ -91,7 +92,7 @@ export class BlockchainListenerService {
                   const tx = (incomingTx.transactionsList as any[])[i]
 
                   if (tx.grpcType === 'executedContractTransaction'
-                    && guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(tx) 
+                    && guard<ParsedIncomingFullGrpcTxType['executedContractTransaction']>(tx)
                     && tx.tx
                     && tx.tx.callContractTransaction
                     && tx.tx.callContractTransaction.contractId === this.configService.envs.EAST_CONTRACT_ID

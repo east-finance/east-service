@@ -13,7 +13,11 @@
   NODE_ADDRESS - default: 'https://carter.welocal.dev/node-0'  
   NODE_GRPC_ADDRESSES - default: '51.178.69.5:6865'  
   NODE_API_KEY  
-  SERVICE_TOKEN  
+  SERVICE_TOKEN
+
+  Время ожидания попадания транзакции из пришедшего микроблока в блок, в секундах
+
+  TX_LIFETIME - default: 600
 
   Интервал для проверки вольтов для ликвидации(in ms):
   LIQUIDATION_CHECK_INTERVAL - default 1000 * 60 * 5 (5 min)

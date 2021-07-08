@@ -35,7 +35,7 @@ const envs = {
   AUTH_URL,
   SERVICE_TOKEN: process.env.SERVICE_TOKEN,
   PUBLIC_KEY,
-  
+
   // PROCESS ENVS:
   // если база пустая - подпись первого блока с которого начинать парсить блокчейн
   FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '5dCZbyj2uPEzo1ntY9kAR8mXJLAxSySyg7qdYM2Du5Ni6Rm4goxXz5sqV8QTe6N6oBPieHrpXUvKngDSxMURzPPg',
@@ -53,7 +53,7 @@ const envs = {
   LIQUIDATION_COLLATERAL: process.env.LIQUIDATION_COLLATERAL ? parseFloat(process.env.LIQUIDATION_COLLATERAL) : 1.3,
 
   LIQUIDATION_CHECK_INTERVAL: process.env.LIQUIDATION_CHECK_INTERVAL ? parseInt(process.env.LIQUIDATION_CHECK_INTERVAL) : 1000 * 60 * 5,
-
+  TX_LIFETIME: process.env.TX_LIFETIME ? Number(process.env.TX_LIFETIME) : 600,
 }
 
 export class ConfigService {
@@ -130,5 +130,9 @@ export class ConfigService {
       publicKey: this.envs.EAST_SERVICE_PUBLIC_KEY,
       privateKey: this.envs.EAST_SERVICE_PRIVATE_KEY
     }
+  }
+
+  getTxLifetime () {
+    return this.envs.TX_LIFETIME
   }
 }
