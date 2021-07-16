@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
 import {
   DB_CON_TOKEN,
@@ -14,6 +14,7 @@ import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
 import { UserService } from '../user/user.service'
+import { Retryable } from 'typescript-retry-decorator'
 
 
 @Injectable()
@@ -28,44 +29,63 @@ export class TransactionService {
     private readonly userService: UserService,
     private readonly vaultService: VaultService
   ) {
-    this.ownerAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
+    this.init()
+  }
+
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 5000,
+  })
+  private init() {
+    try { 
+      this.ownerAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
+      Logger.log('Get EAST contract address successfully completed.')
+    } catch (err) {
+      throw new Error('Can not get EAST contract owner address.')
+    }    
   }
 
   async receiveCallEastContract(sqlTx: Knex.Transaction<any, any[]>, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
+    Logger.log(`Receive call EAST contract. Tx id - ${call.tx.callContractTransaction.id}`)
     const firstParam = call.tx.callContractTransaction.paramsList && call.tx.callContractTransaction.paramsList[0]
     if (!firstParam) {
       return
     }
     const value = firstParam.value ? JSON.parse(firstParam.value) : {}
+    Logger.log(`Call - ${firstParam.key}. Value: ${firstParam.value}`)
     let txId;
-    switch (firstParam.key) {
-      case TxTypes.mint:
-        txId = await this.receiveTypicalTx(TxTypes.mint, sqlTx, value, call, block)
-        break
-      case TxTypes.supply:
-        await this.receiveTypicalTx(TxTypes.supply, sqlTx, value, call, block)
-        break
-      case TxTypes.reissue:
-        txId = await this.receiveTypicalTx(TxTypes.reissue, sqlTx, value, call, block)
-        break
-      case TxTypes.claim_overpay:
-        await this.receiveTypicalTx(TxTypes.claim_overpay, sqlTx, value, call, block)
-        break
-      case TxTypes.claim_overpay_init:
-        await this.сlaimOverpayInit(sqlTx, value, call, block)
-        break
-      case TxTypes.close_init:
-        await this.initClose(sqlTx, call, block)
-        break
-      case TxTypes.close:
-        txId = await this.close(sqlTx, value, call, block)
-        break
-      case TxTypes.transfer:
-        await this.transfer(sqlTx, value, call, block)
-        break
-      case TxTypes.liquidate:
-        await this.liquidate(sqlTx, value, call, block)
-        break
+    try {
+      switch (firstParam.key) {
+        case TxTypes.mint:
+          txId = await this.receiveTypicalTx(TxTypes.mint, sqlTx, value, call, block)
+          break
+        case TxTypes.supply:
+          await this.receiveTypicalTx(TxTypes.supply, sqlTx, value, call, block)
+          break
+        case TxTypes.reissue:
+          txId = await this.receiveTypicalTx(TxTypes.reissue, sqlTx, value, call, block)
+          break
+        case TxTypes.claim_overpay:
+          await this.receiveTypicalTx(TxTypes.claim_overpay, sqlTx, value, call, block)
+          break
+        case TxTypes.claim_overpay_init:
+          await this.сlaimOverpayInit(sqlTx, value, call, block)
+          break
+        case TxTypes.close_init:
+          await this.initClose(sqlTx, call, block)
+          break
+        case TxTypes.close:
+          txId = await this.close(sqlTx, value, call, block)
+          break
+        case TxTypes.transfer:
+          await this.transfer(sqlTx, value, call, block)
+          break
+        case TxTypes.liquidate:
+          await this.liquidate(sqlTx, value, call, block)
+          break
+      }
+    } catch (err) {
+      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, err message - ${err.message}`)
     }
     // default balance update
     if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
@@ -84,85 +104,116 @@ export class TransactionService {
   }
 
   async liquidate(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
-    const liquidatedVault = JSON.parse(liquidatedResult.value)
-
-    const [id] = await sqlTx(Tables.TransactionsLog).insert({
-      tx_id: call.tx.callContractTransaction.id,
-      address: firstParam.address,
-      status: TxStatuses.Executed,
-      type: TxTypes.liquidate,
-      height: block.height,
-      executed_tx_id: call.id,
-      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
-      params: firstParam,
-    }).returning('id')
-
-    await this.vaultService.addVaultLog({
-      txId: id,
-      vault: {
-        ...liquidatedVault,
-        isActive: false
-      },
-      address: firstParam.address,
-      sqlTx
-    })
+    try {
+      const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
+      const liquidatedVault = JSON.parse(liquidatedResult.value)
+  
+      const [id] = await sqlTx(Tables.TransactionsLog).insert({
+        tx_id: call.tx.callContractTransaction.id,
+        address: firstParam.address,
+        status: TxStatuses.Executed,
+        type: TxTypes.liquidate,
+        height: block.height,
+        executed_tx_id: call.id,
+        tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+        params: firstParam,
+      }).returning('id')
+  
+      await this.vaultService.addVaultLog({
+        txId: id,
+        vault: {
+          ...liquidatedVault,
+          isActive: false
+        },
+        address: firstParam.address,
+        sqlTx
+      })
+    } catch (err) {
+      throw new Error('Liquidate handler error: ' + err.message)
+    }
   }
 
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 5000,
+  })
   async transfer(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    const addressFrom = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
-    const addressTo = firstParam.to
+    let addressFrom: string
+    try {
+      addressFrom = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    } catch (err) {
+      throw new Error(`Transfer handler error: can not get address from public key - ${call.tx.callContractTransaction.senderPublicKey}`)
+    }
+    try {
+      const addressTo = firstParam.to
 
-    const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
-    const balanceFrom = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressFrom}`)
-    const balanceTo = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressTo}`)
-
-    const resFrom = await sqlTx(Tables.TransactionsLog).insert({
-      tx_id: call.tx.callContractTransaction.id,
-      address: addressFrom,
-      status: TxStatuses.Executed,
-      type: TxTypes.transfer,
-      height: block.height,
-      executed_tx_id: call.id,
-      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
-      params: firstParam,
-    }).returning('id')
-
-    await this.vaultService.addBalance({
-      id: resFrom[0],
-      address: addressFrom,
-      type: TxTypes.transfer,
-      east_amount: balanceFrom.value,
-      sqlTx
-    })
-
-    const resTo = await sqlTx(Tables.TransactionsLog).insert({
-      tx_id: call.tx.callContractTransaction.id,
-      address: addressTo,
-      status: TxStatuses.Executed,
-      type: TxTypes.transfer,
-      height: block.height,
-      executed_tx_id: call.id,
-      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
-      params: firstParam,
-    }).returning('id')
-
-    await this.vaultService.addBalance({
-      id: resTo[0],
-      address: addressTo,
-      type: TxTypes.transfer,
-      east_amount: balanceTo.value,
-      sqlTx
-    })
+      const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
+      const balanceFrom = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressFrom}`)
+      const balanceTo = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressTo}`)
+  
+      const resFrom = await sqlTx(Tables.TransactionsLog).insert({
+        tx_id: call.tx.callContractTransaction.id,
+        address: addressFrom,
+        status: TxStatuses.Executed,
+        type: TxTypes.transfer,
+        height: block.height,
+        executed_tx_id: call.id,
+        tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+        params: firstParam,
+      }).returning('id')
+  
+      await this.vaultService.addBalance({
+        id: resFrom[0],
+        address: addressFrom,
+        type: TxTypes.transfer,
+        east_amount: balanceFrom.value,
+        sqlTx
+      })
+  
+      const resTo = await sqlTx(Tables.TransactionsLog).insert({
+        tx_id: call.tx.callContractTransaction.id,
+        address: addressTo,
+        status: TxStatuses.Executed,
+        type: TxTypes.transfer,
+        height: block.height,
+        executed_tx_id: call.id,
+        tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+        params: firstParam,
+      }).returning('id')
+  
+      await this.vaultService.addBalance({
+        id: resTo[0],
+        address: addressTo,
+        type: TxTypes.transfer,
+        east_amount: balanceTo.value,
+        sqlTx
+      })
+    } catch (err) {
+      throw new Error(`Transfer handler error: ${err.message}`)
+    }
   }
 
+  @Retryable({
+    maxAttempts: 3,
+    backOff: 5000,
+  })
   async сlaimOverpayInit(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    const address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    let address: string
+    try {
+      address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    } catch (err) {
+      throw new Error(`ClaimOverpayInit handler error: can not get address from public key - ${call.tx.callContractTransaction.senderPublicKey}`)
+    }
     
-    const vaultKey = await this.weSdk.API.Node.contracts.getKey(
-      this.configService.envs.EAST_CONTRACT_ID,
-      `${StateKeys.vault}_${address}`
-    ) as any
+    let vaultKey: any
+    try {
+      vaultKey = await this.weSdk.API.Node.contracts.getKey(
+        this.configService.envs.EAST_CONTRACT_ID,
+        `${StateKeys.vault}_${address}`
+      ) as any  
+    } catch (err) {
+      throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${StateKeys.vault}_${address}, contract id - ${this.configService.envs.EAST_CONTRACT_ID}.`)
+    }
 
     if (!vaultKey.value) {
       await sqlTx(Tables.TransactionsLog).insert({
@@ -178,21 +229,31 @@ export class TransactionService {
         params: JSON.stringify(firstParam),
         error: `Vault for address ${address} not exists`
       })
-      return
+      throw new Error(`ClaimOverpayInit handler error: vault for address ${address} not exists`)
     }
 
     const vault = JSON.parse(vaultKey.value) as IVault
 
-    const westRateKey = await this.weSdk.API.Node.contracts.getKey(
-      this.configService.envs.ORACLE_CONTRACT_ID,
-      this.configService.envs.WEST_ORACLE_STREAM
-    ) as any
+    let westRateKey: any
+    try {
+      westRateKey = await this.weSdk.API.Node.contracts.getKey(
+        this.configService.envs.ORACLE_CONTRACT_ID,
+        this.configService.envs.WEST_ORACLE_STREAM
+      ) as any  
+    } catch (err) {
+      throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${this.configService.envs.WEST_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
+    }
     const westRate = JSON.parse(westRateKey.value)
 
-    const usdapRateKey = await this.weSdk.API.Node.contracts.getKey(
-      this.configService.envs.ORACLE_CONTRACT_ID,
-      this.configService.envs.RWA_ORACLE_STREAM
-    ) as any
+    let usdapRateKey: any
+    try {
+      usdapRateKey = await this.weSdk.API.Node.contracts.getKey(
+        this.configService.envs.ORACLE_CONTRACT_ID,
+        this.configService.envs.RWA_ORACLE_STREAM
+      ) as any  
+    } catch (err) {
+      throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${this.configService.envs.RWA_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
+    }
     const usdapRate = JSON.parse(usdapRateKey.value)
     
     const westPart = 1 - this.configService.envs.EAST_USDAP_PART
@@ -221,7 +282,7 @@ export class TransactionService {
         params: JSON.stringify(firstParam),
         error: `No WEST to return, westRate: ${westRate}`
       })
-      return
+      throw new Error(`ClaimOverpayInit handler error: no WEST to return, westRate: ${westRate}`)
     }
 
     const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
@@ -303,9 +364,24 @@ export class TransactionService {
     return id
   }
 
+  @Retryable({
+    maxAttempts: 3,
+    backOff: 5000,
+  })
   async initClose(sqlTx: Knex.Transaction<any, any[]>, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    const address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
-    const vault = await this.userService.getCurrentVault(address)
+    let address: string
+    try {
+      address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    } catch (err) {
+      throw new Error(`InitClose handler error: can not get address from public key - ${call.tx.callContractTransaction.senderPublicKey}`)
+    }
+
+    let vault
+    try {
+      vault = await this.userService.getCurrentVault(address)
+    } catch (err) {
+      throw new Error(`InitClose handler error: can not get vault by address ${address}`)
+    }
 
     const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
       recipient: address,
@@ -373,8 +449,17 @@ export class TransactionService {
     })
   }
 
+  @Retryable({
+    maxAttempts: 3,
+    backOff: 5000,
+  })
   async receiveTypicalTx(txType: TxTypes, sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
-    let address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    let address: string
+    try {
+      address = this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey)
+    } catch (err) {
+      throw new Error(`ReceiveTypicalTx handler error: can not get address from public key - ${call.tx.callContractTransaction.senderPublicKey}`)
+    }
     if (txType === TxTypes.claim_overpay) {
       address = firstParam.address
     }
