@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
-import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery } from './entities/Transactions'
+import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery } from './transactions.dto'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
