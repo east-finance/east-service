@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common'
 import { DB_CON_TOKEN, Tables, TxStatuses } from '../common/constants'
 import { Knex } from 'knex'
-import { Vault, Balance } from './entities/Transactions'
+import { Vault, Balance } from './transactions.dto'
 
 
 export class UserService {
