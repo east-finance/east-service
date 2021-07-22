@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { TxStatuses } from '../../common/constants'
+import { TxStatuses } from '../common/constants'
 
 export enum OracleStreams {
   USDAP = '000010_latest',
@@ -13,34 +13,34 @@ export enum TransactionsTypes {
 }
 
 export class AddressQuery {
-  @ApiProperty({required: true})
+  @ApiProperty({ required: true })
   address: string
 }
 
 
 export class OraclesQuery {
-  @ApiProperty({enum: OracleStreams})
+  @ApiProperty({ enum: OracleStreams })
   streamId: string
 
-  @ApiProperty({required: false})
+  @ApiProperty({ required: false })
   dateFrom?: number
 
-  @ApiProperty({required: false})
+  @ApiProperty({ required: false })
   dateTo?: number
 
-  @ApiProperty({required: false})
+  @ApiProperty({ required: false })
   limit?: number
 }
 
 
 export class TransactionsQuery {
-  @ApiProperty({required: true})
+  @ApiProperty({ required: true })
   address: string
 
-  @ApiProperty({default: 10, required: false})
+  @ApiProperty({ default: 10, required: false })
   limit: number
 
-  @ApiProperty({default: 0, required: false})
+  @ApiProperty({ default: 0, required: false })
   offset?: number
 }
 
@@ -85,7 +85,7 @@ export class Transaction {
   @ApiProperty({ type: Object })
   info: object
 }
-  
+
 export class Vault {
 
   @ApiProperty({ type: Number })
@@ -123,7 +123,7 @@ export class Vault {
 
   @ApiProperty({ type: String })
   createdAt: string
-}  
+}
 
 export class Balance {
 
@@ -141,4 +141,4 @@ export class Balance {
 
   @ApiProperty({ enum: TransactionsTypes })
   type: string
-}  
+}
