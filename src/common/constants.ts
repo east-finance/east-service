@@ -9,7 +9,8 @@ export enum Tables {
   Oracles = 'oracles',
   VaultLog = 'vault_log',
   TransactionsLog = 'transactions_log',
-  BalanceLog = 'balance_log'
+  BalanceLog = 'balance_log',
+  UserTransactionStatuses = 'user_transaction_statuses',
 }
 
 export enum StateKeys {
@@ -51,6 +52,12 @@ export enum TxStatuses {
   Init = 'init',
   Executed = 'executed',
   Declined = 'declined'
+}
+
+export enum ContractExecutionStatuses {
+  Pending = 'pending',
+  Success = 'success',
+  Fail = 'fail',
 }
 
 export interface Oracle {
