@@ -30,19 +30,21 @@ export class ContracExecutiontStatusService implements OnModuleInit {
               mergeMap(calls => from(calls)),
               mergeMap(call => this.getContractExecutionStatus(call.txId)),
               mergeMap(statusResponse => {
-                let status
+                let status, error
                 switch (statusResponse.status) {
                   case 0:
                     status = ContractExecutionStatuses.Success
                     break;
                   case 1:
                     status = ContractExecutionStatuses.Fail
+                    error = statusResponse.message;
                     break;
                   case 2:
                     status = ContractExecutionStatuses.Fail
+                    error = statusResponse.message;
                     break;
                 }            
-                return this.updateStatus(statusResponse.txId as string, status)
+                return this.updateStatus(statusResponse.txId as string, status, error)
               })
             )
         )
@@ -74,11 +76,14 @@ export class ContracExecutiontStatusService implements OnModuleInit {
     })
   }
 
-  private updateStatus(txId: string, status: ContractExecutionStatuses): Observable<number> {
+  private updateStatus(txId: string, status: ContractExecutionStatuses, error?: string): Observable<number> {
     return from(
       this.knex(Tables.UserTransactionStatuses)
         .where('tx_id', '=', txId)
-        .update('status', status) as Promise<number>
+        .update({
+          status,
+          error,
+        }) as Promise<number>
     )
   }
 
