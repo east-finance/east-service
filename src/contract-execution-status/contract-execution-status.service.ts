@@ -114,7 +114,7 @@ export class ContracExecutiontStatusService implements OnModuleInit {
       connection.on('data', (data) => {
         subscriber.next(ContractExecutionResponse.toObject(false, data))
         subscriber.complete()
-        Logger.log(`Get contract execution status from node: ${ContractExecutionResponse.toObject(false, data)}`)
+        Logger.log(`Get contract execution status from node: ${JSON.stringify(ContractExecutionResponse.toObject(false, data))}`)
       });
       connection.on('close', () => {
         Logger.log('Connection stream closed');
