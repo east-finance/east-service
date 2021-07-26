@@ -7,7 +7,8 @@ import {
   StateKeys,
   Tables,
   IVault,
-  WE_SDK_PROVIDER_TOKEN
+  WE_SDK_PROVIDER_TOKEN,
+  ContractExecutionStatuses
 } from '../common/constants'
 import { ParsedIncomingFullGrpcTxType, WeSdk } from '@wavesenterprise/js-sdk'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
@@ -320,6 +321,13 @@ export class TransactionService {
       this.weSdk.API.Transactions.Atomic.V1({transactions}),
       this.configService.getKeyPair()
     )
+    
+    await sqlTx(Tables.UserTransactionStatuses).insert({
+      tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+      address,
+      status: ContractExecutionStatuses.Pending,
+      type: TxTypes.claim_overpay,
+    })
 
     await sqlTx(Tables.TransactionsLog).insert({
       tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
@@ -434,6 +442,13 @@ export class TransactionService {
       atomicTx,
       this.configService.getKeyPair()
     )
+
+    await sqlTx(Tables.UserTransactionStatuses).insert({
+      tx_id: await closeCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+      address,
+      status: ContractExecutionStatuses.Pending,
+      type: TxTypes.close,
+    })
 
     await sqlTx(Tables.TransactionsLog).insert({
       tx_id: await closeCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),

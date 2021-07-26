@@ -163,6 +163,7 @@ export class UserService {
 
   async getTransactionStatuses(address: string, limit: number, offset = 0) {
     return this.knex(Tables.UserTransactionStatuses)
+      .select()
       .where('address', address)
       .limit(limit)
       .offset(offset)
