@@ -5,7 +5,7 @@ import { DatabaseModule } from '../database/database.module';
 import { ContracExecutiontStatusService } from './contract-execution-status.service';
 
 @Module({
-  imports: [ConfigModule, DatabaseModule],
+  imports: [ConfigModule, DatabaseModule.forRoot()],
   providers: [ContracExecutiontStatusService, WeSdkFactory],
 })
 export class ContracExecutiontStatusModule {}
