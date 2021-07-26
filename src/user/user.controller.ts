@@ -1,9 +1,9 @@
-import { Controller, Get, UseGuards, Query, HttpException } from '@nestjs/common'
+import { Controller, Get, UseGuards, Query, HttpException, Post } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
-import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery } from './transactions.dto'
+import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTx } from './transactions.dto'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -42,6 +42,24 @@ export class UserController {
     return this.userService.getTransactions(address, limit, offset)
   }
 
+  @Get('/transactions/statuses')
+  async getTransactionStatuses(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
+    return this.userService.getTransactionStatuses(address, limit, offset)
+  }
+
+  @Post('/transactions/statuses')
+  async setUserContractCall(tx: UserContractCallTx) {
+    try {
+      await this.userService.setUserContractCall(tx)
+      return { status: 'success' }
+    } catch (err) {
+      if (err instanceof Error) {
+        return { error: err.message }
+      }
+      return { error: 'Unknown error' }
+    }
+  }
+
   @Get('/vault')
   @ApiOkResponse({ type: Vault })
   async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
@@ -61,4 +79,3 @@ export class UserController {
     return this.userService.getVaults(address, limit, offset)
   }
 }
-

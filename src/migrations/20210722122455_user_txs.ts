@@ -15,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
         UNIQUE(tx_id, address, status)
       );
 
-      CREATE INDEX user_transaction_statuses_tx_id_address ON user_transaction_statuses (tx_id, address);
+      CREATE INDEX user_transaction_statuses_address ON user_transaction_statuses (address);
       CREATE INDEX user_transaction_statuses_status ON user_transaction_statuses (status);
   `)
 }

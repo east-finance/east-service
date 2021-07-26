@@ -11,7 +11,7 @@ import { exhaustMap, mergeMap } from 'rxjs/operators';
 
 const PENDING_CALLS_LIMIT = 100;
 
-const POLL_INTERVAL_IN_SECONDS = 30;
+const SECONDS_POLL_INTERVAL = 30;
 
 @Injectable()
 export class ContracExecutiontStatusService implements OnModuleInit {
@@ -22,14 +22,28 @@ export class ContracExecutiontStatusService implements OnModuleInit {
   ) { }
 
   async onModuleInit() {
-    timer(0, 1000 * POLL_INTERVAL_IN_SECONDS)
+    timer(0, 1000 * SECONDS_POLL_INTERVAL)
       .pipe(
         exhaustMap(
           _counter => this.getPendingCalls()
             .pipe(
               mergeMap(calls => from(calls)),
               mergeMap(call => this.getContractExecutionStatus(call.txId)),
-              mergeMap(statusResponse => this.updateStatus(statusResponse.txId, statusResponse.status))
+              mergeMap(statusResponse => {
+                let status
+                switch (statusResponse.status) {
+                  case 0:
+                    status = ContractExecutionStatuses.Success
+                    break;
+                  case 1:
+                    status = ContractExecutionStatuses.Fail
+                    break;
+                  case 2:
+                    status = ContractExecutionStatuses.Fail
+                    break;
+                }            
+                return this.updateStatus(statusResponse.txId as string, status)
+              })
             )
         )
       )

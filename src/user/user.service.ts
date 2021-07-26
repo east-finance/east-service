@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common'
-import { DB_CON_TOKEN, Tables, TxStatuses } from '../common/constants'
+import { ContractExecutionStatuses, DB_CON_TOKEN, Tables, TxStatuses } from '../common/constants'
 import { Knex } from 'knex'
-import { Vault, Balance } from './transactions.dto'
+import { Vault, Balance, UserContractCallTx } from './transactions.dto'
 
 
 export class UserService {
@@ -159,5 +159,22 @@ export class UserService {
       .orderBy(`unique_txs.id`, 'desc')
     
     return transactions
+  }
+
+  async getTransactionStatuses(address: string, limit: number, offset = 0) {
+    return this.knex(Tables.UserTransactionStatuses)
+      .where('address', address)
+      .limit(limit)
+      .offset(offset)
+  }
+
+  async setUserContractCall(tx: UserContractCallTx) {
+    return this.knex(Tables.UserTransactionStatuses)
+      .insert({
+        tx_id: tx.txId,
+        address: tx.address,
+        status: ContractExecutionStatuses.Pending,
+        type: tx.type,
+      })
   }
 }
