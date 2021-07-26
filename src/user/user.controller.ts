@@ -49,7 +49,7 @@ export class UserController {
   }
 
   @Post('/transactions/statuses')
-  async setUserContractCall(@Body() tx: UserContractCallTxRequest) {
+  async setUserContractCall(@AuthUser() user: IAuthUser, @Body() tx: UserContractCallTxRequest) {
     try {
       await this.userService.setUserContractCall(tx)
       return { status: 'success' }
