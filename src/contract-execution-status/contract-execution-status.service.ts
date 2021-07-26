@@ -111,10 +111,19 @@ export class ContracExecutiontStatusService implements OnModuleInit {
         request,
         new grpc.Metadata(),
       )
-      connection.on('data', (data) => {
-        subscriber.next(ContractExecutionResponse.toObject(false, data))
+      connection.on('data', (data: ContractExecutionResponse) => {
+        const _data = data.toObject()
+        const __data = {
+          message: _data.message,
+          status: _data.status,
+          timestamp: _data.timestamp,          
+          sender: this.weSdk.tools.base58.encode(data.getSender_asU8()),
+          signature: this.weSdk.tools.base58.encode(data.getSignature_asU8()),
+          txId: this.weSdk.tools.base58.encode(data.getTxId_asU8()),
+        }
+        subscriber.next(__data)
         subscriber.complete()
-        Logger.log(`Get contract execution status from node: ${JSON.stringify(ContractExecutionResponse.toObject(false, data))}`)
+        Logger.log(`Get contract execution status from node: ${JSON.stringify(__data)}`)
       });
       connection.on('close', () => {
         Logger.log('Connection stream closed');
