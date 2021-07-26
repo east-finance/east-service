@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { TxStatuses, TxTypes } from '../common/constants'
+import { ContractExecutionStatuses, TxStatuses, TxTypes } from '../common/constants'
 
 export enum OracleStreams {
   USDAP = '000010_latest',
@@ -143,8 +143,33 @@ export class Balance {
   type: string
 }
 
-export class UserContractCallTx {
+export class UserContractCallTxRequest {
+  @ApiProperty({ type: String, required: true })
   txId: string
+
+  @ApiProperty({ type: String, required: true })
   address: string
+
+  @ApiProperty({ enum: TxTypes })
   type: TxTypes
+}
+
+export class UserContractCallTxResponse {
+  @ApiProperty({ type: String, required: true })
+  id: string
+
+  @ApiProperty({ type: String, required: true })
+  tx_id: string
+
+  @ApiProperty({ type: String, required: true })
+  address: string
+
+  @ApiProperty({ enum: ContractExecutionStatuses })
+  status: string
+
+  @ApiProperty({ enum: TxTypes })
+  type: string
+
+  @ApiProperty({ type: String, required: true })
+  error: string
 }

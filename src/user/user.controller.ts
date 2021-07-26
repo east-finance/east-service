@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
-import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTx } from './transactions.dto'
+import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse } from './transactions.dto'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -43,12 +43,13 @@ export class UserController {
   }
 
   @Get('/transactions/statuses')
+  @ApiOkResponse({ type: [UserContractCallTxResponse] })
   async getTransactionStatuses(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
     return this.userService.getTransactionStatuses(address, limit, offset)
   }
 
   @Post('/transactions/statuses')
-  async setUserContractCall(tx: UserContractCallTx) {
+  async setUserContractCall(tx: UserContractCallTxRequest) {
     try {
       await this.userService.setUserContractCall(tx)
       return { status: 'success' }
