@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Query, HttpException, Post } from '@nestjs/common'
+import { Controller, Get, UseGuards, Query, HttpException, Post, Body } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
@@ -49,7 +49,7 @@ export class UserController {
   }
 
   @Post('/transactions/statuses')
-  async setUserContractCall(tx: UserContractCallTxRequest) {
+  async setUserContractCall(@Body() tx: UserContractCallTxRequest) {
     try {
       await this.userService.setUserContractCall(tx)
       return { status: 'success' }
