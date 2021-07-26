@@ -44,12 +44,12 @@ export class UserController {
 
   @Get('/transactions/statuses')
   @ApiOkResponse({ type: [UserContractCallTxResponse] })
-  async getTransactionStatuses(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
+  async getTransactionStatuses(@Query() { address, limit, offset }: TransactionsQuery) {
     return this.userService.getTransactionStatuses(address, limit, offset)
   }
 
   @Post('/transactions/statuses')
-  async setUserContractCall(@AuthUser() user: IAuthUser, @Body() tx: UserContractCallTxRequest) {
+  async setUserContractCall(@Body() tx: UserContractCallTxRequest) {
     try {
       await this.userService.setUserContractCall(tx)
       return { status: 'success' }
