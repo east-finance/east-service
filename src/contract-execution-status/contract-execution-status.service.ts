@@ -21,7 +21,10 @@ export class ContracExecutiontStatusService implements OnModuleInit {
     @Inject(DB_CON_TOKEN) readonly knex: Knex,
   ) { }
 
+  contractStatusServiceClient: ContractStatusServiceClient
+
   async onModuleInit() {
+    this.contractStatusServiceClient = await this.createContractStatusServiceClient();
     timer(0, 1000 * SECONDS_POLL_INTERVAL)
       .pipe(
         exhaustMap(
@@ -102,38 +105,37 @@ export class ContracExecutiontStatusService implements OnModuleInit {
 
   private getContractExecutionStatus(txId: string): Observable<ContractExecutionResponse.AsObject> {
     return new Observable(subscriber => {
-      this.createContractStatusServiceClient().then(contractStatusService => {
-        const request = new ContractExecutionRequest()
-        request.setTxId(this.weSdk.tools.base58.decode(txId))
-        const connection = contractStatusService.contractExecutionStatuses(
-          request,
-          new grpc.Metadata(),
-        )
-        connection.on('data', (data) => {
-          subscriber.next(ContractExecutionResponse.toObject(false, data))
-          subscriber.complete()
-        });
-        connection.on('close', () => {
-          Logger.log('Connection stream closed');
-        });
-        connection.on('end', () => {
-          Logger.log('Connection stream ended');
-        });
-        connection.on('error', (error) => {
-          Logger.error(`Connection stream error: ${error.message}`);
-        });
-        connection.on('readable', () => {
-          Logger.log('Connection stream readable');
-          connection.read();
-        });
-        connection.on('pause', () => {
-          Logger.log('Connection stream paused');
-        });
-        connection.on('resume', () => {
-          Logger.log('Connection stream resumed');
-        });
-        Logger.log('Connection created');
-      })
+      const request = new ContractExecutionRequest()
+      request.setTxId(this.weSdk.tools.base58.decode(txId))
+      const connection = this.contractStatusServiceClient.contractExecutionStatuses(
+        request,
+        new grpc.Metadata(),
+      )
+      connection.on('data', (data) => {
+        subscriber.next(ContractExecutionResponse.toObject(false, data))
+        subscriber.complete()
+        Logger.log(`Get contract execution status from node: ${ContractExecutionResponse.toObject(false, data)}`)
+      });
+      connection.on('close', () => {
+        Logger.log('Connection stream closed');
+      });
+      connection.on('end', () => {
+        Logger.log('Connection stream ended');
+      });
+      connection.on('error', (error) => {
+        Logger.error(`Connection stream error: ${error.message}`);
+      });
+      connection.on('readable', () => {
+        Logger.log('Connection stream readable');
+        connection.read();
+      });
+      connection.on('pause', () => {
+        Logger.log('Connection stream paused');
+      });
+      connection.on('resume', () => {
+        Logger.log('Connection stream resumed');
+      });
+      Logger.log('Connection created');
     })
   }
 }
