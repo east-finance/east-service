@@ -49,7 +49,7 @@ export class ContracExecutiontStatusService implements OnModuleInit {
             )
         )
       )
-      .subscribe(value => { console.log(value) })
+      .subscribe()
   }
 
   private async createContractStatusServiceClient(): Promise<ContractStatusServiceClient> {
