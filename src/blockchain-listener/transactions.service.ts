@@ -391,32 +391,40 @@ export class TransactionService {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
 
-    const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
-      recipient: address,
-      amount: Math.round((vault.westAmount - this.closeComission) * 100000000),
-      timestamp: Date.now(),
-      attachment: '',
-      atomicBadge: {
-        trustedSender: this.ownerAddress
-      }
-    })
-  
-    const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
-      recipient: address,
-      assetId: this.configService.envs.USDAP_TOKEN_ID,
-      amount: Math.round(vault.rwaAmount * 100000000),
-      timestamp: Date.now(),
-      attachment: '',
-      atomicBadge: {
-        trustedSender: this.ownerAddress
-      }
-    })
-
-    const params = {
+    const atomicTransactionsArray: any[] = []
+    
+    const params: Record<string, any> = {
       address,
-      westTransferId: await westTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
-      rwaTransferId: await rwaTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
       requestId: call.tx.callContractTransaction.id
+    }
+    
+    if (vault.westAmount > 0) {
+      const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
+        recipient: address,
+        amount: Math.round((vault.westAmount - this.closeComission) * 100000000),
+        timestamp: Date.now(),
+        attachment: '',
+        atomicBadge: {
+          trustedSender: this.ownerAddress
+        }
+      })
+      atomicTransactionsArray.push(westTransfer)
+      params.westTransferId = await westTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
+    }
+  
+    if (vault.rwaAmount > 0) {      
+      const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
+        recipient: address,
+        assetId: this.configService.envs.USDAP_TOKEN_ID,
+        amount: Math.round(vault.rwaAmount * 100000000),
+        timestamp: Date.now(),
+        attachment: '',
+        atomicBadge: {
+          trustedSender: this.ownerAddress
+        }
+      })
+      atomicTransactionsArray.push(rwaTransfer)
+      params.rwaTransferId = await rwaTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
     }
     
     const closeCall = this.weSdk.API.Transactions.CallContract.V4({
@@ -432,10 +440,11 @@ export class TransactionService {
         trustedSender: this.ownerAddress
       }
     })
+    atomicTransactionsArray.push(closeCall)
     
     const atomicTx = this.weSdk.API.Transactions.Atomic.V1({
       timestamp: Date.now(),
-      transactions: [westTransfer, rwaTransfer, closeCall]
+      transactions: atomicTransactionsArray
     })
 
     await this.weSdk.API.Transactions.broadcastAtomicGrpc(
