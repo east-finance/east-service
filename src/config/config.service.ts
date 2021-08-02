@@ -135,4 +135,8 @@ export class ConfigService {
   getTxLifetime () {
     return this.envs.TX_LIFETIME
   }
+
+  getEastContractId () {
+    return this.envs.EAST_CONTRACT_ID
+  }
 }
