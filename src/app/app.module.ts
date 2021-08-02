@@ -4,8 +4,10 @@ import { BlockchainListenerModule } from '../blockchain-listener/blockchain-list
 import { UserModule } from '../user/user.module'
 import { AppController } from './app.controller'
 import { ContracExecutiontStatusModule } from '../contract-execution-status/contract-execution-status.module'
+import { ConfigService } from '../config/config.service';
 
 @Module({
+  providers: [ConfigService],
   imports: [HttpModule, ConfigModule, BlockchainListenerModule, UserModule, ContracExecutiontStatusModule],
   controllers: [AppController]
 })

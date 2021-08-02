@@ -1,8 +1,13 @@
 import { Controller, Get } from '@nestjs/common'
-import { ApiResponse } from '@nestjs/swagger'
+import { ApiOperation, ApiResponse, ApiTags, ApiOkResponse } from '@nestjs/swagger'
+import { ConfigService } from '../config/config.service'
 
+@ApiTags('service')
 @Controller()
 export class AppController {
+  constructor (
+    private readonly configService: ConfigService,
+  ) {}
 
   @Get('livenessProbe')
   @ApiResponse({
@@ -20,5 +25,16 @@ export class AppController {
   })
   readinessProbe() {
     return { time: Date.now() }
+  }
+
+  @Get('/config')
+  @ApiOperation({
+    summary: 'Get service config',
+  })
+  @ApiOkResponse({ type: String })
+  config() {
+    return {
+      eastContractId: this.configService.getEastContractId()
+    }
   }
 }
