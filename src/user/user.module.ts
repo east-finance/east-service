@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common'
+import { Logger, Module, CacheModule } from '@nestjs/common'
 import { WeSdkFactory } from '../common/we-sdk.provider'
 import { ConfigService } from '../config/config.service'
 import { ConfigModule } from '../config/config.module'
@@ -23,6 +23,10 @@ import { JwtModule } from '@nestjs/jwt'
       imports: [ ConfigModule ],
       useFactory: jwtFactory,
       inject: [ConfigService],
+    }),
+    CacheModule.register({
+      ttl: 60,
+      max: 10
     })
   ],
   controllers: [UserController],
