@@ -23,13 +23,13 @@ export class LiquidationService {
   async checkVaults() {
     const { knex } = this
     // TODO
-    const { EAST_USDAP_PART, LIQUIDATION_COLLATERAL } = this.configService.envs
-    const westPart = 1 - EAST_USDAP_PART
+    const { EAST_RWA_PART, LIQUIDATION_COLLATERAL } = this.configService.envs
+    const westPart = 1 - EAST_RWA_PART
     const { westRate } = await this.persistService.getLastOracles()
     const coef = westRate.value / westPart
 
     const selectedFields = ['id', 'address', 'vault_id', 'east_amount']
-    const liquidatedVaults = await knex.with('vaults', 
+    const liquidatedVaults = await knex.with('vaults',
       knex(Tables.VaultLog)
         .select('address', 'id')
         .distinctOn('address')
@@ -43,7 +43,7 @@ export class LiquidationService {
     if (liquidatedVaults.length) {
       Logger.warn(`liquidatedVaults: ${liquidatedVaults.map(v => JSON.stringify(v)).join('\n')}`)
       Logger.warn(`westRate: ${JSON.stringify(westRate)}`)
-      await Promise.all(liquidatedVaults.map(v => 
+      await Promise.all(liquidatedVaults.map(v =>
         this.liquidateVault(v).catch(err => {
           Logger.error(`Error while liquidating vault: ${JSON.stringify(v)}`)
           Logger.error(err)

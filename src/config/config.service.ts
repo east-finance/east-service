@@ -6,12 +6,12 @@ import { execSync } from 'child_process'
 
 config()
 
-const AUTH_URL = process.env.AUTH_URL || 'https://carter.welocal.dev/authServiceAddress'
+const AUTH_URL = process.env.AUTH_URL || ''
 let PUBLIC_KEY: string = ''
 try {
   PUBLIC_KEY = execSync(`curl -s -k '${AUTH_URL}/v1/auth/publicKey'`).toString()
 } catch (err) {
-  Logger.log('Cant get public key from auth server', 'ConfigService')
+  Logger.log(`Cant get public key from auth service. AUTH_URL = "${AUTH_URL}"`, 'ConfigService')
   if (process.env.NODE_ENV !== 'test') {
     process.exit(1)
   }
@@ -25,11 +25,11 @@ const envs = {
   POSTGRES_PORT: process.env.POSTGRES_PORT || '5432',
   POSTGRES_HOST: process.env.POSTGRES_HOST || '127.0.0.1',
   PG_SSL_CERT_FILE_PATH: process.env.PG_SSL_CERT_FILE_PATH,
-  NODE_ADDRESS: process.env.NODE_ADDRESS || 'https://carter.welocal.dev/node-0',
-  NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '51.178.69.5:6865',
+  NODE_ADDRESS: process.env.NODE_ADDRESS || '',
+  NODE_GRPC_ADDRESS: process.env.NODE_GRPC_ADDRESSES || '',
   NODE_API_KEY: process.env.NODE_API_KEY,
-  EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1',
-  EAST_SERVICE_PRIVATE_KEY: process.env.EAST_SERVICE_PRIVATE_KEY || 'DRhyQvDKvaJeuMbhQR9gdyT8dMyoaHry23SifTNhN1qf',
+  EAST_SERVICE_PUBLIC_KEY: process.env.EAST_SERVICE_PUBLIC_KEY || '',
+  EAST_SERVICE_PRIVATE_KEY: process.env.EAST_SERVICE_PRIVATE_KEY || '',
 
   // AUTH
   AUTH_URL,
@@ -38,17 +38,17 @@ const envs = {
 
   // PROCESS ENVS:
   // если база пустая - подпись первого блока с которого начинать парсить блокчейн
-  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '5dCZbyj2uPEzo1ntY9kAR8mXJLAxSySyg7qdYM2Du5Ni6Rm4goxXz5sqV8QTe6N6oBPieHrpXUvKngDSxMURzPPg',
+  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '',
   // oracle contract id
-  ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || 'Hj49AiuzVAtagpPEys4EzVNf8zdqYR2TiZiyPkdcN8ay',
+  ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || '',
   // east contract id
-  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '3AHnR1YFYow2igQ8vsPjugK1Vkndg2LAHGYxV46npVb7',
-  USDAP_TOKEN_ID: process.env.USDAP_TOKEN_ID as string || '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR',
+  EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '',
+  RWA_TOKEN_ID: process.env.RWA_TOKEN_ID as string || '',
   // oracle streams
   WEST_ORACLE_STREAM: '000003_latest',
   RWA_ORACLE_STREAM: '000010_latest',
   // east collateral
-  EAST_USDAP_PART: process.env.EAST_USDAP_PART ? parseFloat(process.env.EAST_USDAP_PART) : 0.5,
+  EAST_RWA_PART: process.env.EAST_RWA_PART ? parseFloat(process.env.EAST_RWA_PART) : 0.5,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
   LIQUIDATION_COLLATERAL: process.env.LIQUIDATION_COLLATERAL ? parseFloat(process.env.LIQUIDATION_COLLATERAL) : 1.3,
 
@@ -65,9 +65,24 @@ export class ConfigService {
     if (dbName) {
       this.dbName = dbName
     }
-    this.envs = {
+    this.envs = this.validateEnvs({
       ...envs,
+    })
+  }
+
+  validateEnvs (envVariables: typeof envs) {
+    const missingEnvs = Object.entries(envVariables)
+      .reduce((acc: string[], [key, value]) => {
+        if (value === '') {
+          acc.push(key)
+        }
+        return acc
+    }, [])
+    if (missingEnvs.length > 0) {
+      console.log(`Required ENV variable(s) is missing: ${missingEnvs.join(', ')}. Exit`)
+      process.exit(1)
     }
+    return envVariables
   }
 
   getAuthOptions() {
