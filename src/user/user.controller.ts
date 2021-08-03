@@ -1,22 +1,32 @@
-import { Controller, Get, UseGuards, Query, HttpException, Post, Body, CACHE_MANAGER, Inject } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Query,
+  HttpException,
+  Post,
+  Body,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { Cache } from 'cache-manager'
-import * as moment from 'moment'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
 import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse } from './transactions.dto'
+import { HttpCacheInterceptor } from '../cache/httpCache.interceptor'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
+@UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('user')
 @Controller('v1/user')
 export class UserController {
   constructor (
     private readonly userService: UserService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
+  @UseInterceptors(HttpCacheInterceptor)
   @Get('/oracles')
   @ApiOkResponse({ type: [Transaction] })
   async getOracles(@AuthUser() user: IAuthUser, @Query() { streamId, limit, dateFrom, dateTo }: OraclesQuery) {
@@ -36,23 +46,12 @@ export class UserController {
     if (!['000010_latest', '000003_latest'].includes(streamId)) {
       throw new HttpException(`No such stream id: ${streamId}. Allowed: '000010_latest', '000003_latest'`, 400)
     }
-    const momentFormat = 'YYYY.MM.DD.HH:mm'
-    const dateFromKey = moment(dateFromParsed).format(momentFormat)
-    const dateToKey = moment(dateToParsed).format(momentFormat)
-    const cacheOraclesKey = `${streamId}_${dateFromKey}_${dateToKey}_${limit ? limit : 0}`
 
-    const cachedValues = await this.cacheManager.get(cacheOraclesKey)
-    if (cachedValues) {
-      return cachedValues
-    } else {
-      const dbValues = await this.userService.getOracles(streamId,
-        dateFromParsed && new Date(dateFromParsed),
-        dateToParsed && new Date(dateToParsed),
-        limit
-      )
-      await this.cacheManager.set(cacheOraclesKey, dbValues)
-      return dbValues
-    }
+    return this.userService.getOracles(streamId,
+      dateFromParsed && new Date(dateFromParsed),
+      dateToParsed && new Date(dateToParsed),
+      limit
+    )
   }
 
   @Get('/transactions')
