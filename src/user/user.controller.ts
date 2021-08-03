@@ -1,12 +1,24 @@
-import { Controller, Get, UseGuards, Query, HttpException, Post, Body } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Query,
+  HttpException,
+  Post,
+  Body,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
 import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse } from './transactions.dto'
+import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
+@UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('user')
 @Controller('v1/user')
 export class UserController {
@@ -14,6 +26,7 @@ export class UserController {
     private readonly userService: UserService,
   ) {}
 
+  @UseInterceptors(HttpCacheInterceptor)
   @Get('/oracles')
   @ApiOkResponse({ type: [Transaction] })
   async getOracles(@AuthUser() user: IAuthUser, @Query() { streamId, limit, dateFrom, dateTo }: OraclesQuery) {
@@ -33,7 +46,12 @@ export class UserController {
     if (!['000010_latest', '000003_latest'].includes(streamId)) {
       throw new HttpException(`No such stream id: ${streamId}. Allowed: '000010_latest', '000003_latest'`, 400)
     }
-    return this.userService.getOracles(streamId, dateFromParsed && new Date(dateFromParsed), dateToParsed && new Date(dateToParsed), limit)
+
+    return this.userService.getOracles(streamId,
+      dateFromParsed && new Date(dateFromParsed),
+      dateToParsed && new Date(dateToParsed),
+      limit
+    )
   }
 
   @Get('/transactions')
