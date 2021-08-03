@@ -14,7 +14,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
 import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse } from './transactions.dto'
-import { HttpCacheInterceptor } from '../cache/httpCache.interceptor'
+import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
