@@ -15,6 +15,7 @@ import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
 import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse } from './transactions.dto'
 import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
+import { LiquidationService } from '../blockchain-listener/liquidation.service'
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -24,6 +25,7 @@ import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
 export class UserController {
   constructor (
     private readonly userService: UserService,
+    private readonly liquidationService: LiquidationService,
   ) {}
 
   @UseInterceptors(HttpCacheInterceptor)
@@ -83,6 +85,12 @@ export class UserController {
   @ApiOkResponse({ type: Vault })
   async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
     return this.userService.getCurrentVault(address)
+  }
+
+  @Get('/liquidatableVaults')
+  @ApiOkResponse({ type: [Vault] })
+  async getLiquidateVaults() {
+    return this.liquidationService.getLiquidatableVaults()
   }
 
   @Get('/balance')

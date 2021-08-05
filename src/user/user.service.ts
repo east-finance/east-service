@@ -9,7 +9,7 @@ export class UserService {
   constructor (
     @Inject(DB_CON_TOKEN) readonly knex: Knex
   ) {}
-  
+
   getOracles(stream: string, dateFrom?: Date, dateTo?: Date, limit?: number) {
     const knex = this.knex
     const select = {
@@ -36,7 +36,7 @@ export class UserService {
 
     return req
   }
-  
+
   async getCurrentBalance(address: string): Promise<Balance> {
     const knex = this.knex
     const select = {
@@ -97,7 +97,7 @@ export class UserService {
       createdAt: `${Tables.VaultLog}.created_at`
     }
 
-    return knex.with('last_vaults', 
+    return knex.with('last_vaults',
         knex(Tables.VaultLog)
           .select('vault_id', 'id')
           .where({address})
@@ -133,7 +133,7 @@ export class UserService {
     }
 
     // TODO handle TxStatuses.Declined
-    const transactions = await knex.with('unique_txs', 
+    const transactions = await knex.with('unique_txs',
         knex(Tables.TransactionsLog)
           .select('id', 'tx_id')
           .where({address})
@@ -157,7 +157,7 @@ export class UserService {
       .leftJoin(`${Tables.BalanceLog}`, `${executedTxs}.id`, '=', `${Tables.BalanceLog}.id`)
       .leftJoin(`${Tables.VaultLog}`, `${executedTxs}.id`, '=', `${Tables.VaultLog}.id`)
       .orderBy(`unique_txs.id`, 'desc')
-    
+
     return transactions
   }
 
