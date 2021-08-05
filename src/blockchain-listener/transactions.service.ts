@@ -260,7 +260,10 @@ export class TransactionService {
     const westPart = 1 - this.configService.envs.EAST_USDAP_PART
     const westCollateral = this.configService.envs.EAST_WEST_COLLATERAL
     
-    const westExpectedUsdValue = vault.eastAmount * westPart * usdapRate.value * westCollateral
+    let westExpectedUsdValue = vault.eastAmount * westPart * usdapRate.value * westCollateral
+    if (this.configService.envs.EAST_USDAP_PART === 0) {
+      westExpectedUsdValue = vault.eastAmount * westPart * westCollateral
+    }
     const expectedWestAmount = westExpectedUsdValue / westRate.value
 
     let returnedAmount = vault.westAmount - expectedWestAmount
