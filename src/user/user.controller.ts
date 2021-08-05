@@ -88,7 +88,7 @@ export class UserController {
   }
 
   @Get('/liquidatableVaults')
-  @ApiOkResponse({ type: Vault })
+  @ApiOkResponse({ type: [Vault] })
   async getLiquidateVaults() {
     return this.liquidationService.getLiquidatableVaults()
   }
