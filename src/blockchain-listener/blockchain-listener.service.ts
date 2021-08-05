@@ -51,7 +51,7 @@ export class BlockchainListenerService {
       rollbackToBlockSignature: this.persistService.rollbackToBlockSignature,
       receiveTxs: this.receiveTxs,
       receiveCriticalError: this.receiveError,
-      onHistorySynced: this.onHistorySynced
+      // onHistorySynced: this.onHistorySynced
     })
   }
 

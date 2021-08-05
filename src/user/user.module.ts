@@ -8,6 +8,8 @@ import { UserController } from './user.controller'
 import { jwtFactory } from '../common/jwt.factory'
 import { JwtStrategy } from '../common/jwt.strategy'
 import { JwtModule } from '@nestjs/jwt'
+import { LiquidationService } from '../blockchain-listener/liquidation.service'
+import { PersistService } from '../blockchain-listener/persist.service'
 
 @Module({
   providers: [
@@ -16,6 +18,8 @@ import { JwtModule } from '@nestjs/jwt'
     WeSdkFactory,
     UserService,
     JwtStrategy,
+    PersistService,
+    LiquidationService
   ],
   imports: [
     DatabaseModule.forRoot(),

@@ -20,30 +20,32 @@ export class LiquidationService {
     private readonly persistService: PersistService
   ) {}
 
-  async checkVaults() {
-    const { knex } = this
-    // TODO
+  async getLiquidatableVaults () {
     const { EAST_USDAP_PART, LIQUIDATION_COLLATERAL } = this.configService.envs
     const westPart = 1 - EAST_USDAP_PART
     const { westRate } = await this.persistService.getLastOracles()
     const coef = westRate.value / westPart
 
-    const selectedFields = ['id', 'address', 'vault_id', 'east_amount']
-    const liquidatedVaults = await knex.with('vaults', 
-      knex(Tables.VaultLog)
+    return this.knex.with('vaults',
+      this.knex(Tables.VaultLog)
         .select('address', 'id')
         .distinctOn('address')
         .orderBy(['address', { column: 'id', order: 'desc' }])
-    ).select(selectedFields.map(f => `${Tables.VaultLog}.${f}`))
-    .from('vaults')
-    .where('is_active', true)
-    .andWhereRaw(`west_amount / east_amount * ? < ?`, [ coef, LIQUIDATION_COLLATERAL ])
-    .leftJoin(Tables.VaultLog, `vaults.id`, `${Tables.VaultLog}.id`)
+    ).select('*')
+      .from('vaults')
+      .where('is_active', true)
+      .andWhereRaw(`west_amount / east_amount * ? < ?`, [ coef, LIQUIDATION_COLLATERAL ])
+      .leftJoin(Tables.VaultLog, `vaults.id`, `${Tables.VaultLog}.id`)
+  }
+
+  async checkVaults() {
+    const { westRate } = await this.persistService.getLastOracles()
+    const liquidatedVaults = await this.getLiquidatableVaults()
 
     if (liquidatedVaults.length) {
       Logger.warn(`liquidatedVaults: ${liquidatedVaults.map(v => JSON.stringify(v)).join('\n')}`)
       Logger.warn(`westRate: ${JSON.stringify(westRate)}`)
-      await Promise.all(liquidatedVaults.map(v => 
+      await Promise.all(liquidatedVaults.map(v =>
         this.liquidateVault(v).catch(err => {
           Logger.error(`Error while liquidating vault: ${JSON.stringify(v)}`)
           Logger.error(err)
