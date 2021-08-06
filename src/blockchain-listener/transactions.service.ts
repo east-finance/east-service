@@ -110,7 +110,7 @@ export class TransactionService {
       const liquidatedVault = JSON.parse(liquidatedResult.value)
 
       const transferCall = this.weSdk.API.Transactions.Transfer.V3({
-        recipient: liquidatedResult.value.liquidatedWestAmount.address,
+        recipient: liquidatedResult.value.address,
         assetId: '',
         amount: liquidatedResult.value.liquidatedWestAmount,
         timestamp: Date.now(),
