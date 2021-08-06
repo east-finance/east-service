@@ -113,6 +113,7 @@ export class TransactionService {
         assetId: '',
         amount: liquidatedVault.liquidatedWestAmount,
         timestamp: Date.now(),
+        attachment: '',
       })
       transferCall.broadcast(this.configService.getKeyPair())
   
