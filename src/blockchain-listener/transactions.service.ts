@@ -108,13 +108,11 @@ export class TransactionService {
     try {
       const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
       const liquidatedVault = JSON.parse(liquidatedResult.value)
-
       const transferCall = this.weSdk.API.Transactions.Transfer.V3({
-        recipient: liquidatedResult.value.address,
+        recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
         assetId: '',
-        amount: liquidatedResult.value.liquidatedWestAmount,
+        amount: liquidatedVault.liquidatedWestAmount,
         timestamp: Date.now(),
-        attachment: call.tx.callContractTransaction.id,
       })
       transferCall.broadcast(this.configService.getKeyPair())
   
