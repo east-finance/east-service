@@ -108,6 +108,18 @@ export class TransactionService {
     try {
       const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
       const liquidatedVault = JSON.parse(liquidatedResult.value)
+
+      const transferCall = this.weSdk.API.Transactions.Transfer.V3({
+        recipient: liquidatedResult.value.liquidatedWestAmount.address,
+        assetId: '',
+        amount: liquidatedResult.value.liquidatedWestAmount,
+        timestamp: Date.now(),
+        attachment: call.tx.callContractTransaction.id,
+        atomicBadge: {
+          trustedSender: this.ownerAddress
+        }
+      })
+      transferCall.broadcast(this.configService.getKeyPair())
   
       const [id] = await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
