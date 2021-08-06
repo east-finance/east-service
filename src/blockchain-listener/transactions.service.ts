@@ -115,9 +115,6 @@ export class TransactionService {
         amount: liquidatedResult.value.liquidatedWestAmount,
         timestamp: Date.now(),
         attachment: call.tx.callContractTransaction.id,
-        atomicBadge: {
-          trustedSender: this.ownerAddress
-        }
       })
       transferCall.broadcast(this.configService.getKeyPair())
   
