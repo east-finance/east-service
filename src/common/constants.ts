@@ -20,7 +20,8 @@ export enum StateKeys {
   config = 'config',
   exchange = 'exchange',
   liquidatedVault = 'liquidated_vault',
-  totalUsdap = 'total_usdap'
+  totalUsdap = 'total_usdap',
+  liquidationExchange = 'liquidation_exchange',
 }
 
 export interface ContractConfigParam {
@@ -44,9 +45,9 @@ export enum TxTypes {
   liquidate = 'liquidate',
   update_config = 'update_config',
   claim_overpay_init = 'claim_overpay_init',
-  claim_overpay = 'claim_overpay'
+  claim_overpay = 'claim_overpay',
+  write_liquidation_west_transfer = 'write_liquidation_west_transfer',
 }
-
 
 export enum TxStatuses {
   Init = 'init',

@@ -107,15 +107,46 @@ export class TransactionService {
   async liquidate(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     try {
       const liquidatedResult = call.resultsList?.find(row => row.key.startsWith(`${StateKeys.liquidatedVault}_${firstParam.address}`))
+      const splittedKey = liquidatedResult.key.split('_')
+      const liquidationTimestamp = splittedKey[splittedKey.length - 1]
+
+      let liquidationWestTransferExists
+      try {
+        await this.weSdk.API.Node.contracts.getKey(
+          this.configService.getEastContractId(),
+          `${StateKeys.liquidationExchange}_${firstParam.address}_${liquidationTimestamp}`,
+        )
+        liquidationWestTransferExists = true
+      } catch (err) {
+        liquidationWestTransferExists = false
+      }
+      
       const liquidatedVault = JSON.parse(liquidatedResult.value)
-      const transferCall = this.weSdk.API.Transactions.Transfer.V3({
-        recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
-        assetId: '',
-        amount: liquidatedVault.liquidatedWestAmount * 100000000,
-        timestamp: Date.now(),
-        attachment: '',
-      })
-      transferCall.broadcast(this.configService.getKeyPair())
+      
+      if (!liquidationWestTransferExists) {        
+        const transferCall = this.weSdk.API.Transactions.Transfer.V3({
+          recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
+          assetId: '',
+          amount: liquidatedVault.liquidatedWestAmount * 100000000,
+          timestamp: Date.now(),
+          attachment: '',
+        })
+        await transferCall.broadcast(this.configService.getKeyPair())
+        const writeLiquidationWestTransferCall = this.weSdk.API.Transactions.CallContract.V4({
+          contractId: this.configService.envs.EAST_CONTRACT_ID,
+          contractVersion: 1,
+          timestamp: Date.now(),
+          params: [{
+            type: 'string',
+            key: TxTypes.write_liquidation_west_transfer,
+            value: JSON.stringify({
+              address: firstParam.address,
+              timestamp: liquidationTimestamp,
+            })
+          }],
+        })
+        await writeLiquidationWestTransferCall.broadcast(this.configService.getKeyPair());
+      }
   
       const [id] = await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
