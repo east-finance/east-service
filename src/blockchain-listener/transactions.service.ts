@@ -123,15 +123,18 @@ export class TransactionService {
       
       const liquidatedVault = JSON.parse(liquidatedResult.value)
       
-      if (!liquidationWestTransferExists) {        
+      if (!liquidationWestTransferExists) {
         const transferCall = this.weSdk.API.Transactions.Transfer.V3({
           recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
           assetId: '',
           amount: liquidatedVault.liquidatedWestAmount * 100000000,
           timestamp: Date.now(),
           attachment: '',
+          atomicBadge: {
+            trustedSender: this.ownerAddress,
+          },
         })
-        await transferCall.broadcast(this.configService.getKeyPair())
+
         const writeLiquidationWestTransferCall = this.weSdk.API.Transactions.CallContract.V4({
           contractId: this.configService.envs.EAST_CONTRACT_ID,
           contractVersion: 1,
@@ -144,8 +147,15 @@ export class TransactionService {
               timestamp: liquidationTimestamp,
             })
           }],
+          atomicBadge: {
+            trustedSender: this.ownerAddress,
+          },
         })
-        await writeLiquidationWestTransferCall.broadcast(this.configService.getKeyPair());
+        
+        await this.weSdk.API.Transactions.broadcastAtomic(
+          this.weSdk.API.Transactions.Atomic.V1({ transactions: [transferCall, writeLiquidationWestTransferCall] }),
+          this.configService.getKeyPair()
+        )    
       }
   
       const [id] = await sqlTx(Tables.TransactionsLog).insert({
