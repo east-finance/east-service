@@ -176,7 +176,7 @@ export class UserService {
         address: tx.address,
         status: ContractExecutionStatuses.Pending,
         type: tx.type,
-        timestamp: tx.timestamp,
+        timestamp: new Date(tx.timestamp),
       })
   }
 }
