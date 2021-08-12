@@ -13,6 +13,8 @@ const PENDING_CALLS_LIMIT = 100;
 
 const SECONDS_POLL_INTERVAL = 30;
 
+const PENDING_CALLS_LOWER_LIMIT_IN_MINUTES = 60;
+
 @Injectable()
 export class ContracExecutiontStatusService implements OnModuleInit {
   constructor(
@@ -99,7 +101,7 @@ export class ContracExecutiontStatusService implements OnModuleInit {
         .where({
           status: ContractExecutionStatuses.Pending
         })
-        .andWhere('timestamp', '>', (new Date(Date.now() - 1000 * 60 * 5)).toISOString())
+        .andWhere('timestamp', '>', (new Date(Date.now() - 1000 * 60 * PENDING_CALLS_LOWER_LIMIT_IN_MINUTES)).toISOString())
         .limit(PENDING_CALLS_LIMIT)
     )
   }
