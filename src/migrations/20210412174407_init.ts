@@ -93,6 +93,7 @@ export async function up(knex: Knex): Promise<void> {
           address          character varying                        NOT NULL,
           status           contract_execution_status                NOT NULL,
           type             tx_type                                  NOT NULL,
+          timestamp        timestamp with time zone                 NOT NULL,
           error            character varying,
           UNIQUE(tx_id, address, status)
         );

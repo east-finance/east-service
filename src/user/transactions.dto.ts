@@ -152,6 +152,9 @@ export class UserContractCallTxRequest {
 
   @ApiProperty({ enum: TxTypes })
   type: TxTypes
+
+  @ApiProperty({ type: Number, required: true })
+  timestamp: number
 }
 
 export class UserContractCallTxResponse {

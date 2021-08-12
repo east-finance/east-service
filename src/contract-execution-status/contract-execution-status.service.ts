@@ -99,6 +99,7 @@ export class ContracExecutiontStatusService implements OnModuleInit {
         .where({
           status: ContractExecutionStatuses.Pending
         })
+        .andWhere('timestamp', '>', (new Date(Date.now() - 1000 * 60 * 5)).toISOString())
         .limit(PENDING_CALLS_LIMIT)
     )
   }
