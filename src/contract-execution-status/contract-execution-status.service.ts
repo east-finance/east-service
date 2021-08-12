@@ -133,6 +133,7 @@ export class ContracExecutiontStatusService implements OnModuleInit {
       });
       connection.on('error', (error) => {
         Logger.error(`Connection stream error: ${error.message}`);
+        subscriber.complete()
       });
       connection.on('readable', () => {
         Logger.log('Connection stream readable');
