@@ -15,7 +15,6 @@ import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
 import { UserService } from '../user/user.service'
-import { Retryable } from 'typescript-retry-decorator'
 
 
 @Injectable()
@@ -33,10 +32,6 @@ export class TransactionService {
     this.init()
   }
 
-  @Retryable({ 
-    maxAttempts: 3,
-    backOff: 5000,
-  })
   private init() {
     try { 
       this.ownerAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
@@ -183,10 +178,6 @@ export class TransactionService {
     }
   }
 
-  @Retryable({ 
-    maxAttempts: 3,
-    backOff: 5000,
-  })
   async transfer(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     let addressFrom: string
     try {
@@ -243,10 +234,6 @@ export class TransactionService {
     }
   }
 
-  @Retryable({
-    maxAttempts: 3,
-    backOff: 5000,
-  })
   async сlaimOverpayInit(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     let address: string
     try {
@@ -424,10 +411,6 @@ export class TransactionService {
     return id
   }
 
-  @Retryable({
-    maxAttempts: 3,
-    backOff: 5000,
-  })
   async initClose(sqlTx: Knex.Transaction<any, any[]>, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     let address: string
     try {
@@ -525,10 +508,6 @@ export class TransactionService {
     })
   }
 
-  @Retryable({
-    maxAttempts: 3,
-    backOff: 5000,
-  })
   async receiveTypicalTx(txType: TxTypes, sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
     let address: string
     try {
