@@ -66,12 +66,27 @@ export interface Oracle {
   timestamp?: number
 }
 
-export interface IVault {
+export interface OracleJson {
+  value?: string,
+  timestamp?: number
+}
+
+export interface Vault {
   eastAmount: number,
   westAmount: number,
   rwaAmount: number,
   westRate: Oracle,
   rwaRate: Oracle,
+  liquidated?: boolean,
+  isActive?: boolean
+}
+
+export interface VaultJson {
+  eastAmount: string,
+  westAmount: string,
+  rwaAmount: string,
+  westRate: OracleJson,
+  rwaRate: OracleJson,
   liquidated?: boolean,
   isActive?: boolean
 }
