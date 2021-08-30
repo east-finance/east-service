@@ -82,7 +82,7 @@ export class TransactionService {
           break
       }
     } catch (err) {
-      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, err message - ${err.message}`)
+      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${err.stack}`)
     }
     // default balance update
     if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
@@ -427,12 +427,6 @@ export class TransactionService {
     } catch (err) {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
-
-    vault.westAmount = parseFloat(vault.westAmount as unknown as string);
-    vault.eastAmount = parseFloat(vault.eastAmount as unknown as string);
-    vault.rwaAmount = parseFloat(vault.rwaAmount as unknown as string);
-    vault.westRate = parseFloat(vault.westRate as unknown as string);
-    vault.rwaRate = parseFloat(vault.rwaRate as unknown as string);
     
     const atomicTransactionsArray: any[] = []
     

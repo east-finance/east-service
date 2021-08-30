@@ -45,7 +45,7 @@ export class VaultService {
     // TODO make some actions
     await (sqlTx || this.knex)(Tables.VaultLog).insert({
       id: txId,
-      vault_id: vaultId || oldVault.vaultId,
+      vault_id: vaultId || oldVault?.vaultId,
       address,
       west_amount: vault.westAmount || 0,
       east_amount: vault.eastAmount || 0,
