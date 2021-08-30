@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { DB_CON_TOKEN, IVault, Tables } from '../common/constants'
+import { DB_CON_TOKEN, Tables, Vault } from '../common/constants'
 import { UserService } from '../user/user.service'
 
 import { Knex } from 'knex'
@@ -35,7 +35,7 @@ export class VaultService {
 
   async addVaultLog({txId, vault, address, sqlTx, vaultId} : {
     txId: string,
-    vault: IVault,
+    vault: Vault,
     address: string,
     sqlTx?: any,
     vaultId?: string
@@ -45,7 +45,7 @@ export class VaultService {
     // TODO make some actions
     await (sqlTx || this.knex)(Tables.VaultLog).insert({
       id: txId,
-      vault_id: vaultId || oldVault.vaultId,
+      vault_id: vaultId || oldVault?.vaultId,
       address,
       west_amount: vault.westAmount || 0,
       east_amount: vault.eastAmount || 0,

@@ -6,7 +6,7 @@ import {
   TxStatuses,
   StateKeys,
   Tables,
-  IVault,
+  VaultJson,
   WE_SDK_PROVIDER_TOKEN,
   ContractExecutionStatuses
 } from '../common/constants'
@@ -15,6 +15,7 @@ import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
 import { UserService } from '../user/user.service'
+import { parseVault } from '../common/parse-vault'
 
 
 @Injectable()
@@ -81,7 +82,7 @@ export class TransactionService {
           break
       }
     } catch (err) {
-      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, err message - ${err.message}`)
+      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${err.stack}`)
     }
     // default balance update
     if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
@@ -116,13 +117,13 @@ export class TransactionService {
         liquidationWestTransferExists = false
       }
       
-      const liquidatedVault = JSON.parse(liquidatedResult.value)
+      const liquidatedVault = parseVault(JSON.parse(liquidatedResult.value))
       
       if (!liquidationWestTransferExists) {
         const transferCall = this.weSdk.API.Transactions.Transfer.V3({
           recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
           assetId: '',
-          amount: liquidatedVault.liquidatedWestAmount * 100000000,
+          amount: liquidatedVault.liquidatedWestAmount! * 100000000,
           timestamp: Date.now(),
           attachment: '',
           atomicBadge: {
@@ -269,7 +270,8 @@ export class TransactionService {
       throw new Error(`ClaimOverpayInit handler error: vault for address ${address} not exists`)
     }
 
-    const vault = JSON.parse(vaultKey.value) as IVault
+    const vaultJson = JSON.parse(vaultKey.value) as VaultJson
+    const vault = parseVault(vaultJson)
 
     let westRateKey: any
     try {
@@ -425,7 +427,7 @@ export class TransactionService {
     } catch (err) {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
-
+    
     const atomicTransactionsArray: any[] = []
     
     const params: Record<string, any> = {
@@ -526,7 +528,8 @@ export class TransactionService {
     }
 
     const vaultInfo = call.resultsList?.find(res => res.key === `${StateKeys.vault}_${address}`)
-    const vaultParsed = JSON.parse(vaultInfo.value) as IVault
+    const vaultJson = JSON.parse(vaultInfo.value) as VaultJson
+    const vault = parseVault(vaultJson)
 
     const [id] = await sqlTx(Tables.TransactionsLog).insert({
       tx_id: call.tx.callContractTransaction.id,
@@ -542,7 +545,7 @@ export class TransactionService {
     // save vault
     await this.vaultService.addVaultLog({
       txId: id,
-      vault: vaultParsed,
+      vault,
       address,
       sqlTx,
       vaultId,
