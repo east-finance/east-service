@@ -175,7 +175,7 @@ export class TransactionService {
         sqlTx
       })
     } catch (err) {
-      throw new Error('Liquidate handler error: ' + err.message)
+      throw new Error('Liquidate handler error:\n' + err.stack)
     }
   }
 
