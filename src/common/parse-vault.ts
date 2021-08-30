@@ -13,6 +13,7 @@ export function parseVault(vaultJson: VaultJson): Vault {
     rwaRate: {
       timestamp: vaultJson.rwaRate.timestamp,
       value: vaultJson.rwaRate.value ? parseFloat(vaultJson.rwaRate.value) : 0,
-    }
+    },
+    liquidatedWestAmount: vaultJson.liquidatedWestAmount !== undefined ? parseFloat(vaultJson.liquidatedWestAmount) : undefined
   }
 }

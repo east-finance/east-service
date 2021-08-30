@@ -117,13 +117,13 @@ export class TransactionService {
         liquidationWestTransferExists = false
       }
       
-      const liquidatedVault = JSON.parse(liquidatedResult.value)
+      const liquidatedVault = parseVault(JSON.parse(liquidatedResult.value))
       
       if (!liquidationWestTransferExists) {
         const transferCall = this.weSdk.API.Transactions.Transfer.V3({
           recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
           assetId: '',
-          amount: liquidatedVault.liquidatedWestAmount * 100000000,
+          amount: liquidatedVault.liquidatedWestAmount! * 100000000,
           timestamp: Date.now(),
           attachment: '',
           atomicBadge: {
@@ -427,6 +427,17 @@ export class TransactionService {
     } catch (err) {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
+
+    console.log('=====')
+    console.log(vault)
+    console.log('=====')
+    // temp
+    vault.westAmount = parseFloat(vault.westAmount as unknown as string)
+    vault.eastAmount = parseFloat(vault.eastAmount as unknown as string)
+    vault.rwaAmount = parseFloat(vault.rwaAmount as unknown as string)
+    vault.westRate = parseFloat(vault.westRate as unknown as string)
+    vault.rwaRate = parseFloat(vault.rwaRate as unknown as string)
+    // temp
 
     const atomicTransactionsArray: any[] = []
     

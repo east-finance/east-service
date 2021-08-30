@@ -78,13 +78,15 @@ export interface Vault {
   westRate: Oracle,
   rwaRate: Oracle,
   liquidated?: boolean,
-  isActive?: boolean
+  isActive?: boolean,
+  liquidatedWestAmount?: number,
 }
 
 export interface VaultJson {
   eastAmount: string,
   westAmount: string,
   rwaAmount: string,
+  liquidatedWestAmount?: string,
   westRate: OracleJson,
   rwaRate: OracleJson,
   liquidated?: boolean,
