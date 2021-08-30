@@ -494,6 +494,7 @@ export class TransactionService {
       address,
       status: ContractExecutionStatuses.Pending,
       type: TxTypes.close,
+      timestamp: new Date(),
     })
 
     await sqlTx(Tables.TransactionsLog).insert({
