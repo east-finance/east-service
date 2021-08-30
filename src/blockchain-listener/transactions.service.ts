@@ -428,17 +428,6 @@ export class TransactionService {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
 
-    console.log('=====')
-    console.log(vault)
-    console.log('=====')
-    // temp
-    vault.westAmount = parseFloat(vault.westAmount as unknown as string)
-    vault.eastAmount = parseFloat(vault.eastAmount as unknown as string)
-    vault.rwaAmount = parseFloat(vault.rwaAmount as unknown as string)
-    vault.westRate = parseFloat(vault.westRate as unknown as string)
-    vault.rwaRate = parseFloat(vault.rwaRate as unknown as string)
-    // temp
-
     const atomicTransactionsArray: any[] = []
     
     const params: Record<string, any> = {

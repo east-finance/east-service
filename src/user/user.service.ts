@@ -79,6 +79,12 @@ export class UserService {
       .orderBy('id', 'desc')
       .limit(1)
 
+    res.westAmount = parseFloat(res.westAmount)
+    res.eastAmount = parseFloat(res.eastAmount)
+    res.rwaAmount = parseFloat(res.rwaAmount)
+    res.westRate = parseFloat(res.westRate)
+    res.rwaRate = parseFloat(res.rwaRate)
+      
     return res
   }
 
