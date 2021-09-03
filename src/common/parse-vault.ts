@@ -1,11 +1,15 @@
 import { VaultJson, Vault } from "./constants";
 
+const DECIMALS = 8;
+
+const MULTIPLIER = Math.pow(10, DECIMALS);
+
 export function parseVault(vaultJson: VaultJson): Vault {
   return {
     ...vaultJson,
-    eastAmount: vaultJson.eastAmount !== undefined ? parseFloat(vaultJson.eastAmount) : 0,
-    rwaAmount: vaultJson.rwaAmount !== undefined ? parseFloat(vaultJson.rwaAmount) : 0,
-    westAmount: parseFloat(vaultJson.westAmount),
+    eastAmount: vaultJson.eastAmount !== undefined ? parseFloat(vaultJson.eastAmount) / MULTIPLIER : 0,
+    rwaAmount: vaultJson.rwaAmount !== undefined ? parseFloat(vaultJson.rwaAmount) / MULTIPLIER : 0,
+    westAmount: vaultJson.westAmount !== undefined ? parseFloat(vaultJson.westAmount) / MULTIPLIER : 0,
     westRate: vaultJson.westRate !== undefined ? {
       timestamp: vaultJson.westRate.timestamp,
       value: vaultJson.westRate.value ? parseFloat(vaultJson.westRate.value) : 0,
