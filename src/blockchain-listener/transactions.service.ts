@@ -34,12 +34,12 @@ export class TransactionService {
   }
 
   private init() {
-    try { 
+    try {
       this.ownerAddress = this.weSdk.tools.getAddressFromPublicKey(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
       Logger.log('Get EAST contract address successfully completed.')
     } catch (err) {
       throw new Error('Can not get EAST contract owner address.')
-    }    
+    }
   }
 
   async receiveCallEastContract(sqlTx: Knex.Transaction<any, any[]>, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
@@ -116,9 +116,9 @@ export class TransactionService {
       } catch (err) {
         liquidationWestTransferExists = false
       }
-      
+
       const liquidatedVault = parseVault(JSON.parse(liquidatedResult.value))
-      
+
       if (!liquidationWestTransferExists) {
         const transferCall = this.weSdk.API.Transactions.Transfer.V3({
           recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
@@ -147,13 +147,13 @@ export class TransactionService {
             trustedSender: this.ownerAddress,
           },
         })
-        
+
         await this.weSdk.API.Transactions.broadcastAtomic(
           this.weSdk.API.Transactions.Atomic.V1({ transactions: [transferCall, writeLiquidationWestTransferCall] }),
           this.configService.getKeyPair()
-        )    
+        )
       }
-  
+
       const [id] = await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
         address: firstParam.address,
@@ -164,7 +164,7 @@ export class TransactionService {
         tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
         params: firstParam,
       }).returning('id')
-  
+
       await this.vaultService.addVaultLog({
         txId: id,
         vault: {
@@ -192,7 +192,7 @@ export class TransactionService {
       const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
       const balanceFrom = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressFrom}`)
       const balanceTo = balancesUpdated.find(row => row.key === `${StateKeys.balance}_${addressTo}`)
-  
+
       const resFrom = await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
         address: addressFrom,
@@ -203,7 +203,7 @@ export class TransactionService {
         tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
         params: firstParam,
       }).returning('id')
-  
+
       await this.vaultService.addBalance({
         id: resFrom[0],
         address: addressFrom,
@@ -211,7 +211,7 @@ export class TransactionService {
         east_amount: balanceFrom.value,
         sqlTx
       })
-  
+
       const resTo = await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
         address: addressTo,
@@ -222,7 +222,7 @@ export class TransactionService {
         tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
         params: firstParam,
       }).returning('id')
-  
+
       await this.vaultService.addBalance({
         id: resTo[0],
         address: addressTo,
@@ -242,13 +242,13 @@ export class TransactionService {
     } catch (err) {
       throw new Error(`ClaimOverpayInit handler error: can not get address from public key - ${call.tx.callContractTransaction.senderPublicKey}`)
     }
-    
+
     let vaultKey: any
     try {
       vaultKey = await this.weSdk.API.Node.contracts.getKey(
         this.configService.envs.EAST_CONTRACT_ID,
         `${StateKeys.vault}_${address}`
-      ) as any  
+      ) as any
     } catch (err) {
       throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${StateKeys.vault}_${address}, contract id - ${this.configService.envs.EAST_CONTRACT_ID}.`)
     }
@@ -278,7 +278,7 @@ export class TransactionService {
       westRateKey = await this.weSdk.API.Node.contracts.getKey(
         this.configService.envs.ORACLE_CONTRACT_ID,
         this.configService.envs.WEST_ORACLE_STREAM
-      ) as any  
+      ) as any
     } catch (err) {
       throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${this.configService.envs.WEST_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
     }
@@ -289,15 +289,15 @@ export class TransactionService {
       usdapRateKey = await this.weSdk.API.Node.contracts.getKey(
         this.configService.envs.ORACLE_CONTRACT_ID,
         this.configService.envs.RWA_ORACLE_STREAM
-      ) as any  
+      ) as any
     } catch (err) {
       throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${this.configService.envs.RWA_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
     }
     const usdapRate = JSON.parse(usdapRateKey.value)
-    
+
     const westPart = 1 - this.configService.envs.EAST_USDAP_PART
     const westCollateral = this.configService.envs.EAST_WEST_COLLATERAL
-    
+
     let westExpectedUsdValue = vault.eastAmount * westPart * usdapRate.value * westCollateral
     if (this.configService.envs.EAST_USDAP_PART === 0) {
       westExpectedUsdValue = vault.eastAmount * westPart * westCollateral
@@ -337,7 +337,7 @@ export class TransactionService {
         trustedSender: this.ownerAddress
       }
     })
-    
+
     const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
       contractId: this.configService.envs.EAST_CONTRACT_ID,
       contractVersion: 1,
@@ -355,19 +355,20 @@ export class TransactionService {
         trustedSender: this.ownerAddress
       }
     })
-    
+
     const transactions = [overpayTransfer, overpayCall]
 
     await this.weSdk.API.Transactions.broadcastAtomic(
       this.weSdk.API.Transactions.Atomic.V1({transactions}),
       this.configService.getKeyPair()
     )
-    
+
     await sqlTx(Tables.UserTransactionStatuses).insert({
       tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
       address,
       status: ContractExecutionStatuses.Pending,
       type: TxTypes.claim_overpay,
+      timestamp: new Date(),
     })
 
     await sqlTx(Tables.TransactionsLog).insert({
@@ -427,14 +428,14 @@ export class TransactionService {
     } catch (err) {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
-    
+
     const atomicTransactionsArray: any[] = []
-    
+
     const params: Record<string, any> = {
       address,
       requestId: call.tx.callContractTransaction.id
     }
-    
+
     if (vault.westAmount > 0) {
       const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
@@ -448,8 +449,8 @@ export class TransactionService {
       atomicTransactionsArray.push(westTransfer)
       params.westTransferId = await westTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
     }
-  
-    if (vault.rwaAmount > 0) {      
+
+    if (vault.rwaAmount > 0) {
       const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
         assetId: this.configService.envs.USDAP_TOKEN_ID,
@@ -463,7 +464,7 @@ export class TransactionService {
       atomicTransactionsArray.push(rwaTransfer)
       params.rwaTransferId = await rwaTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
     }
-    
+
     const closeCall = this.weSdk.API.Transactions.CallContract.V4({
       contractId: this.configService.envs.EAST_CONTRACT_ID,
       contractVersion: 1,
@@ -478,7 +479,7 @@ export class TransactionService {
       }
     })
     atomicTransactionsArray.push(closeCall)
-    
+
     const atomicTx = this.weSdk.API.Transactions.Atomic.V1({
       timestamp: Date.now(),
       transactions: atomicTransactionsArray
