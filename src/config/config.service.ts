@@ -48,7 +48,7 @@ const envs = {
   WEST_ORACLE_STREAM: '000003_latest',
   RWA_ORACLE_STREAM: '000010_latest',
   // east collateral
-  EAST_USDAP_PART: process.env.EAST_USDAP_PART ? parseFloat(process.env.EAST_USDAP_PART) : 0.5,
+  EAST_USDAP_PART: process.env.EAST_USDAP_PART ? parseFloat(process.env.EAST_USDAP_PART) : 0,
   EAST_WEST_COLLATERAL: process.env.EAST_WEST_COLLATERAL ? parseFloat(process.env.EAST_WEST_COLLATERAL) : 2.5,
   LIQUIDATION_COLLATERAL: process.env.LIQUIDATION_COLLATERAL ? parseFloat(process.env.LIQUIDATION_COLLATERAL) : 1.3,
 
