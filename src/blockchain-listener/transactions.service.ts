@@ -82,7 +82,8 @@ export class TransactionService {
           break
       }
     } catch (err) {
-      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${err.stack}`)
+      const _err = err as Error
+      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${_err.stack}`)
     }
     // default balance update
     if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
@@ -175,7 +176,8 @@ export class TransactionService {
         sqlTx
       })
     } catch (err) {
-      throw new Error('Liquidate handler error:\n' + err.stack)
+      const _err = err as Error
+      throw new Error('Liquidate handler error:\n' + _err.stack)
     }
   }
 
@@ -231,7 +233,8 @@ export class TransactionService {
         sqlTx
       })
     } catch (err) {
-      throw new Error(`Transfer handler error: ${err.message}`)
+      const _err = err as Error;
+      throw new Error(`Transfer handler error: ${_err.message}`)
     }
   }
 
