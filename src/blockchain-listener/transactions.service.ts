@@ -124,7 +124,7 @@ export class TransactionService {
         const transferCall = this.weSdk.API.Transactions.Transfer.V3({
           recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
           assetId: '',
-          amount: liquidatedVault.liquidatedWestAmount! * 100000000,
+          amount: liquidatedVault.liquidatedWestAmount,
           timestamp: Date.now(),
           attachment: '',
           atomicBadge: {
