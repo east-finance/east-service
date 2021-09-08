@@ -37,6 +37,19 @@ function transformTransactions(txs: Await<ReturnType<UserService['getTransaction
   });
 }
 
+function transformVault(vault: Vault | 
+  Omit<Vault, 'eastAmount' | 'rwaAmount' | 'westAmount'> & {
+    eastAmount: string,
+    rwaAmount: string,
+    westAmount: string,
+  }
+) {
+  vault.eastAmount = (vault.eastAmount as unknown as number / MULTIPLIER).toString();
+  vault.rwaAmount = (vault.rwaAmount as unknown as number / MULTIPLIER).toString();
+  vault.westAmount = (vault.westAmount as unknown as number / MULTIPLIER).toString();
+  return vault
+}
+
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
 @UseInterceptors(ClassSerializerInterceptor)
@@ -104,7 +117,7 @@ export class UserController {
   @Get('/vault')
   @ApiOkResponse({ type: Vault })
   async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
-    return this.userService.getCurrentVault(address)
+    return transformVault(await this.userService.getCurrentVault(address))
   }
 
   @Get('/liquidatableVaults')

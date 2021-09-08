@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { DB_CON_TOKEN, Tables, Vault } from '../common/constants'
+import { DB_CON_TOKEN, Tables, VaultJson } from '../common/constants'
 import { UserService } from '../user/user.service'
 
 import { Knex } from 'knex'
@@ -35,7 +35,7 @@ export class VaultService {
 
   async addVaultLog({txId, vault, address, sqlTx, vaultId} : {
     txId: string,
-    vault: Vault,
+    vault: VaultJson,
     address: string,
     sqlTx?: any,
     vaultId?: string
@@ -50,9 +50,9 @@ export class VaultService {
       west_amount: vault.westAmount || 0,
       east_amount: vault.eastAmount || 0,
       rwa_amount: vault.rwaAmount || 0,
-      west_amount_diff: oldVault ? (vault.westAmount || 0) - oldVault.westAmount : vault.westAmount,
-      east_amount_diff: oldVault ? (vault.eastAmount || 0) - oldVault.eastAmount : vault.eastAmount,
-      rwa_amount_diff: oldVault ? (vault.rwaAmount || 0) - oldVault.rwaAmount : vault.rwaAmount,
+      west_amount_diff: oldVault ? (parseInt(vault.westAmount) || 0) - oldVault.westAmount : vault.westAmount,
+      east_amount_diff: oldVault ? (parseInt(vault.eastAmount) || 0) - oldVault.eastAmount : vault.eastAmount,
+      rwa_amount_diff: oldVault ? (parseInt(vault.rwaAmount) || 0) - oldVault.rwaAmount : vault.rwaAmount,
       west_rate: vault.westRate && vault.westRate.value,
       rwa_rate: vault.rwaRate && vault.rwaRate.value,
       west_rate_timestamp: vault.westRate && vault.westRate.timestamp ? new Date(+vault.westRate.timestamp) : null,

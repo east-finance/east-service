@@ -15,7 +15,7 @@ import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
 import { UserService } from '../user/user.service'
-import { parseVault, transfromVaultToIntegerView } from '../common/parse-vault'
+import { parseVault } from '../common/parse-vault'
 
 
 @Injectable()
@@ -118,13 +118,13 @@ export class TransactionService {
         liquidationWestTransferExists = false
       }
 
-      const liquidatedVault = parseVault(JSON.parse(liquidatedResult.value))
+      const liquidatedVault = JSON.parse(liquidatedResult.value)
 
       if (!liquidationWestTransferExists) {
         const transferCall = this.weSdk.API.Transactions.Transfer.V3({
           recipient: this.weSdk.tools.getAddressFromPublicKey(call.tx.callContractTransaction.senderPublicKey),
           assetId: '',
-          amount: liquidatedVault.liquidatedWestAmount,
+          amount: parseFloat(liquidatedVault.liquidatedWestAmount),
           timestamp: Date.now(),
           attachment: '',
           atomicBadge: {
@@ -169,7 +169,7 @@ export class TransactionService {
       await this.vaultService.addVaultLog({
         txId: id,
         vault: {
-          ...(transfromVaultToIntegerView(liquidatedVault)),
+          ...liquidatedVault,
           isActive: false
         },
         address: firstParam.address,
@@ -403,9 +403,9 @@ export class TransactionService {
     await this.vaultService.addVaultLog({
       txId: id,
       vault: {
-        eastAmount: 0,
-        westAmount: 0,
-        rwaAmount: 0,
+        eastAmount: '0',
+        westAmount: '0',
+        rwaAmount: '0',
         westRate: {},
         rwaRate: {},
         isActive: false
@@ -534,7 +534,6 @@ export class TransactionService {
 
     const vaultInfo = call.resultsList?.find(res => res.key === `${StateKeys.vault}_${address}`)
     const vaultJson = JSON.parse(vaultInfo.value) as VaultJson
-    const vault = parseVault(vaultJson)
 
     const [id] = await sqlTx(Tables.TransactionsLog).insert({
       tx_id: call.tx.callContractTransaction.id,
@@ -550,7 +549,7 @@ export class TransactionService {
     // save vault
     await this.vaultService.addVaultLog({
       txId: id,
-      vault: transfromVaultToIntegerView(vault),
+      vault: vaultJson,
       address,
       sqlTx,
       vaultId,
