@@ -22,17 +22,17 @@ const DECIMALS = 8;
 
 const MULTIPLIER = Math.pow(10, DECIMALS);
 
-function transformBalance(balanceResponse: Balance) {
-  balanceResponse.eastAmount = balanceResponse.eastAmount / MULTIPLIER;
-  balanceResponse.eastAmountDiff = balanceResponse.eastAmountDiff / MULTIPLIER;
+function transformBalance(balanceResponse: Balance | Omit<Balance, 'eastAmount' | 'eastAmountDiff'> & { eastAmount: string, eastAmountDiff: string }) {
+  balanceResponse.eastAmount = (balanceResponse.eastAmount as unknown as number / MULTIPLIER).toString();
+  balanceResponse.eastAmountDiff = (balanceResponse.eastAmountDiff  as unknown as number / MULTIPLIER).toString();
   return balanceResponse
 }
 
 function transformTransactions(txs: Await<ReturnType<UserService['getTransactions']>>) {
   return txs.map(tx => {
-    tx.westAmountDiff = tx.tx.westAmountDiff / MULTIPLIER;
-    tx.rwaAmountDiff = tx.tx.rwaAmountDiff / MULTIPLIER;
-    tx.eastAmountDiff = tx.tx.eastAmountDiff / MULTIPLIER;
+    tx.westAmountDiff = (tx.westAmountDiff / MULTIPLIER).toString();
+    tx.rwaAmountDiff = (tx.rwaAmountDiff / MULTIPLIER).toString();
+    tx.eastAmountDiff = (tx.eastAmountDiff / MULTIPLIER).toString();
     return tx
   });
 }
