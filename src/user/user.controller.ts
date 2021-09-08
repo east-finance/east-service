@@ -13,9 +13,29 @@ import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
 import { UserService } from './user.service'
-import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse } from './transactions.dto'
+import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, UserContractCallTxRequest, UserContractCallTxResponse, Balance } from './transactions.dto'
 import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
 import { LiquidationService } from '../blockchain-listener/liquidation.service'
+import { Await } from '../common/types'
+
+const DECIMALS = 8;
+
+const MULTIPLIER = Math.pow(10, DECIMALS);
+
+function transformBalance(balanceResponse: Balance) {
+  balanceResponse.eastAmount = balanceResponse.eastAmount / MULTIPLIER;
+  balanceResponse.eastAmountDiff = balanceResponse.eastAmountDiff / MULTIPLIER;
+  return balanceResponse
+}
+
+function transformTransactions(txs: Await<ReturnType<UserService['getTransactions']>>) {
+  return txs.map(tx => {
+    tx.westAmountDiff = tx.tx.westAmountDiff / MULTIPLIER;
+    tx.rwaAmountDiff = tx.tx.rwaAmountDiff / MULTIPLIER;
+    tx.eastAmountDiff = tx.tx.eastAmountDiff / MULTIPLIER;
+    return tx
+  });
+}
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -59,7 +79,7 @@ export class UserController {
   @Get('/transactions')
   @ApiOkResponse({ type: [Transaction] })
   async getTransactions(@AuthUser() user: IAuthUser, @Query() { address, limit, offset }: TransactionsQuery) {
-    return this.userService.getTransactions(address, limit, offset)
+    return transformTransactions(await this.userService.getTransactions(address, limit, offset))
   }
 
   @Get('/transactions/statuses')
@@ -96,7 +116,7 @@ export class UserController {
   @Get('/balance')
   @ApiOkResponse({ type: Vault })
   async getCurrentBalance(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
-    return this.userService.getCurrentBalance(address)
+    return transformBalance((await this.userService.getCurrentBalance(address)))
   }
 
 

@@ -15,7 +15,7 @@ import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
 import { UserService } from '../user/user.service'
-import { parseVault } from '../common/parse-vault'
+import { parseVault, transfromVaultToIntegerView } from '../common/parse-vault'
 
 
 @Injectable()
@@ -169,7 +169,7 @@ export class TransactionService {
       await this.vaultService.addVaultLog({
         txId: id,
         vault: {
-          ...liquidatedVault,
+          ...(transfromVaultToIntegerView(liquidatedVault)),
           isActive: false
         },
         address: firstParam.address,
@@ -550,7 +550,7 @@ export class TransactionService {
     // save vault
     await this.vaultService.addVaultLog({
       txId: id,
-      vault,
+      vault: transfromVaultToIntegerView(vault),
       address,
       sqlTx,
       vaultId,

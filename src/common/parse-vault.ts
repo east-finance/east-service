@@ -21,3 +21,12 @@ export function parseVault(vaultJson: VaultJson): Vault {
     liquidatedWestAmount: vaultJson.liquidatedWestAmount !== undefined ? parseFloat(vaultJson.liquidatedWestAmount) : undefined
   }
 }
+
+export function transfromVaultToIntegerView(vault: Vault) {
+  return {
+    ...vault,
+    eastAmount: vault.eastAmount !== undefined ? vault.eastAmount * MULTIPLIER : 0,
+    rwaAmount: vault.rwaAmount !== undefined ? vault.rwaAmount * MULTIPLIER : 0,
+    westAmount: vault.westAmount !== undefined ? vault.westAmount * MULTIPLIER : 0,
+  }
+}
