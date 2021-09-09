@@ -24,6 +24,7 @@
     "@wavesenterprise/grpc-listener": "^0.1.1",
     "@wavesenterprise/js-sdk": "^3.3.6",
     "base64-js": "^1.5.1",
+    "bignumber.js": "^9.0.1",
     "cache-manager": "^3.4.4",
     "class-transformer": "^0.4.0",
     "class-validator": "0.13.1",

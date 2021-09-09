@@ -7,8 +7,8 @@ import {
   Post,
   Body,
   UseInterceptors,
-  ClassSerializerInterceptor,
-} from '@nestjs/common'
+  ClassSerializerInterceptor, NotFoundException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
@@ -17,6 +17,7 @@ import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, User
 import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
 import { LiquidationService } from '../blockchain-listener/liquidation.service'
 import { Await } from '../common/types'
+import { roundNumber } from '../common/round-number';
 
 const DECIMALS = 8;
 
@@ -37,16 +38,16 @@ function transformTransactions(txs: Await<ReturnType<UserService['getTransaction
   });
 }
 
-function transformVault(vault: Vault | 
+function transformVault(vault: Vault |
   Omit<Vault, 'eastAmount' | 'rwaAmount' | 'westAmount'> & {
     eastAmount: string,
     rwaAmount: string,
     westAmount: string,
   }
 ) {
-  vault.eastAmount = (vault.eastAmount as unknown as number / MULTIPLIER).toString();
-  vault.rwaAmount = (vault.rwaAmount as unknown as number / MULTIPLIER).toString();
-  vault.westAmount = (vault.westAmount as unknown as number / MULTIPLIER).toString();
+  vault.eastAmount = roundNumber(vault.eastAmount as unknown as number / MULTIPLIER);
+  vault.rwaAmount = roundNumber(vault.rwaAmount as unknown as number / MULTIPLIER);
+  vault.westAmount = roundNumber(vault.westAmount as unknown as number / MULTIPLIER);
   return vault
 }
 
@@ -117,7 +118,11 @@ export class UserController {
   @Get('/vault')
   @ApiOkResponse({ type: Vault })
   async getCurrentVault(@AuthUser() user: IAuthUser, @Query() { address }: AddressQuery) {
-    return transformVault(await this.userService.getCurrentVault(address))
+    const vault = await this.userService.getCurrentVault(address)
+    if (vault) {
+      return transformVault(vault)
+    }
+    throw new NotFoundException('Vault is not found')
   }
 
   @Get('/liquidatableVaults')
