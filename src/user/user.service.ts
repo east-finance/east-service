@@ -53,7 +53,7 @@ export class UserService {
       .orderBy('id', 'desc')
       .limit(1)
 
-    return res || { eastAmount: 0, address }
+    return res || { eastAmount: 0, eastAmountDiff: 0, address }
   }
 
   async getCurrentVault(address: string): Promise<Vault> {
@@ -78,7 +78,7 @@ export class UserService {
       .where({address})
       .orderBy('id', 'desc')
       .limit(1)
-                
+
     return res
   }
 
@@ -165,6 +165,7 @@ export class UserService {
     return this.knex(Tables.UserTransactionStatuses)
       .select()
       .where('address', address)
+      .orderBy(`timestamp`, 'desc')
       .limit(limit)
       .offset(offset)
   }

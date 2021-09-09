@@ -8,7 +8,7 @@ import {
   Body,
   UseInterceptors,
   ClassSerializerInterceptor, NotFoundException,
-} from '@nestjs/common';
+} from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import {AuthUser, IAuthUser} from '../common/auth-user'
@@ -17,23 +17,23 @@ import { Vault, Transaction, TransactionsQuery, AddressQuery, OraclesQuery, User
 import { HttpCacheInterceptor } from '../cache/http-cache.interceptor'
 import { LiquidationService } from '../blockchain-listener/liquidation.service'
 import { Await } from '../common/types'
-import { roundNumber } from '../common/round-number';
+import { roundNumber } from '../common/round-number'
 
 const DECIMALS = 8;
 
 const MULTIPLIER = Math.pow(10, DECIMALS);
 
 function transformBalance(balanceResponse: Balance | Omit<Balance, 'eastAmount' | 'eastAmountDiff'> & { eastAmount: string, eastAmountDiff: string }) {
-  balanceResponse.eastAmount = (balanceResponse.eastAmount as unknown as number / MULTIPLIER).toString();
-  balanceResponse.eastAmountDiff = (balanceResponse.eastAmountDiff  as unknown as number / MULTIPLIER).toString();
+  balanceResponse.eastAmount = roundNumber(balanceResponse.eastAmount as unknown as number / MULTIPLIER);
+  balanceResponse.eastAmountDiff = roundNumber(balanceResponse.eastAmountDiff  as unknown as number / MULTIPLIER);
   return balanceResponse
 }
 
 function transformTransactions(txs: Await<ReturnType<UserService['getTransactions']>>) {
   return txs.map(tx => {
-    tx.westAmountDiff = (tx.westAmountDiff / MULTIPLIER).toString();
-    tx.rwaAmountDiff = (tx.rwaAmountDiff / MULTIPLIER).toString();
-    tx.eastAmountDiff = (tx.eastAmountDiff / MULTIPLIER).toString();
+    tx.westAmountDiff = roundNumber(tx.westAmountDiff / MULTIPLIER);
+    tx.rwaAmountDiff = roundNumber(tx.rwaAmountDiff / MULTIPLIER);
+    tx.eastAmountDiff = roundNumber(tx.eastAmountDiff / MULTIPLIER);
     return tx
   });
 }
