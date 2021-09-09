@@ -65,9 +65,7 @@ export class ConfigService {
     if (dbName) {
       this.dbName = dbName
     }
-    this.envs = this.validateEnvs({
-      ...envs,
-    })
+    this.envs = this.validateEnvs(envs)
   }
 
   validateEnvs (envVariables: typeof envs) {
