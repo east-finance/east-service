@@ -456,7 +456,7 @@ export class TransactionService {
     if (vault.rwaAmount > 0) {
       const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
-        assetId: this.configService.envs.USDAP_TOKEN_ID,
+        assetId: this.configService.envs.RWA_TOKEN_ID,
         amount: Math.round(vault.rwaAmount * 100000000),
         timestamp: Date.now(),
         attachment: '',
