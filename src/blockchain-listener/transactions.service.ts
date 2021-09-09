@@ -21,7 +21,7 @@ import { parseVault } from '../common/parse-vault'
 @Injectable()
 export class TransactionService {
   ownerAddress: string
-  closeComission = 0.3
+  closeFee = 30000000
 
   constructor (
     private readonly configService: ConfigService,
@@ -442,7 +442,7 @@ export class TransactionService {
     if (vault.westAmount > 0) {
       const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
-        amount: Math.round((vault.westAmount - this.closeComission) * 100000000),
+        amount: Math.round((vault.westAmount - this.closeFee)),
         timestamp: Date.now(),
         attachment: '',
         atomicBadge: {
@@ -457,7 +457,7 @@ export class TransactionService {
       const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
         assetId: this.configService.envs.USDAP_TOKEN_ID,
-        amount: Math.round(vault.rwaAmount * 100000000),
+        amount: vault.rwaAmount,
         timestamp: Date.now(),
         attachment: '',
         atomicBadge: {
