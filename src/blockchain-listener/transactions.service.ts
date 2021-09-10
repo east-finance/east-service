@@ -440,10 +440,12 @@ export class TransactionService {
       requestId: call.tx.callContractTransaction.id
     }
 
-    if (vault.westAmount > 0) {
+    const vaultWestAmount = parseInt(vault.westAmount)
+    
+    if (vaultWestAmount > 0) {
       const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
-        amount: vault.westAmount - this.closeFee,
+        amount: vaultWestAmount - this.closeFee,
         timestamp: Date.now(),
         attachment: '',
         atomicBadge: {
@@ -454,11 +456,13 @@ export class TransactionService {
       params.westTransferId = await westTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY)
     }
 
-    if (vault.rwaAmount > 0) {
+    const vaultRwaAmount = parseInt(vault.rwaAmount)
+    
+    if (vaultRwaAmount > 0) {
       const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
         assetId: this.configService.envs.RWA_TOKEN_ID,
-        amount: vault.rwaAmount,
+        amount: vaultRwaAmount,
         timestamp: Date.now(),
         attachment: '',
         atomicBadge: {

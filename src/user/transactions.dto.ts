@@ -97,14 +97,14 @@ export class Vault {
   @ApiProperty({ type: String })
   vaultId: string
 
-  @ApiProperty({ type: Number })
-  westAmount: number
+  @ApiProperty({ type: String })
+  westAmount: string
 
-  @ApiProperty({ type: Number })
-  eastAmount: number
+  @ApiProperty({ type: String })
+  eastAmount: string
 
-  @ApiProperty({ type: Number })
-  rwaAmount: number
+  @ApiProperty({ type: String })
+  rwaAmount: string
 
   @ApiProperty({ type: Number })
   westRate: number
