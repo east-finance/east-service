@@ -83,7 +83,8 @@ export class TransactionService {
       }
     } catch (err) {
       const _err = err as Error
-      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${_err.stack}`)
+      Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${_err.message},\n${_err.stack}`)
+      process.exit(1);
     }
     // default balance update
     if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
@@ -442,7 +443,7 @@ export class TransactionService {
     if (vault.westAmount > 0) {
       const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
-        amount: Math.round((vault.westAmount - this.closeFee)),
+        amount: vault.westAmount - this.closeFee,
         timestamp: Date.now(),
         attachment: '',
         atomicBadge: {
@@ -457,7 +458,7 @@ export class TransactionService {
       const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
         assetId: this.configService.envs.RWA_TOKEN_ID,
-        amount: Math.round(vault.rwaAmount * 100000000),
+        amount: vault.rwaAmount,
         timestamp: Date.now(),
         attachment: '',
         atomicBadge: {
@@ -488,7 +489,7 @@ export class TransactionService {
       transactions: atomicTransactionsArray
     })
 
-    await this.weSdk.API.Transactions.broadcastAtomicGrpc(
+    await this.weSdk.API.Transactions.broadcastAtomic(
       atomicTx,
       this.configService.getKeyPair()
     )
