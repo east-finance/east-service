@@ -426,10 +426,9 @@ export class TransactionService {
       throw new Error(`InitClose handler error: can not get address from public key - ${call.tx.callContractTransaction.senderPublicKey}`)
     }
 
-    let vault
-    try {
-      vault = await this.userService.getCurrentVault(address)
-    } catch (err) {
+    const vault = await this.userService.getCurrentVault(address, sqlTx)
+
+    if(!vault) {
       throw new Error(`InitClose handler error: can not get vault by address ${address}`)
     }
 
