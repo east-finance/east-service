@@ -56,8 +56,8 @@ export class UserService {
     return res || { eastAmount: 0, eastAmountDiff: 0, address }
   }
 
-  async getCurrentVault(address: string): Promise<Vault> {
-    const knex = this.knex
+  async getCurrentVault(address: string, sqlTx?: Knex.Transaction): Promise<Vault> {
+    const knex = (sqlTx || this.knex)
     const select = {
       id: `${Tables.VaultLog}.id`,
       vaultId: `${Tables.VaultLog}.vault_id`,

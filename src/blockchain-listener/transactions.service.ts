@@ -81,24 +81,24 @@ export class TransactionService {
           await this.liquidate(sqlTx, value, call, block)
           break
       }
+      // default balance update
+      if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
+        const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
+        for (const result of balancesUpdated) {
+          const parsed = result.key.split('_')
+          await this.vaultService.addBalance({
+            id: txId,
+            address: parsed[1],
+            type: firstParam.key,
+            east_amount: result.value,
+            sqlTx
+          })
+        }
+      }
     } catch (err) {
       const _err = err as Error
       Logger.error(`Transaction processing error: tx id - ${call.tx.callContractTransaction.id}, tx type - ${firstParam.key},\n${_err.message},\n${_err.stack}`)
       process.exit(1);
-    }
-    // default balance update
-    if ([TxTypes.close, TxTypes.mint, TxTypes.reissue].includes(firstParam.key)) {
-      const balancesUpdated = call.resultsList?.filter(row => row.key.startsWith(`${StateKeys.balance}_`)) || []
-      for (const result of balancesUpdated) {
-        const parsed = result.key.split('_')
-        await this.vaultService.addBalance({
-          id: txId,
-          address: parsed[1],
-          type: firstParam.key,
-          east_amount: result.value,
-          sqlTx
-        })
-      }
     }
   }
 
@@ -441,7 +441,7 @@ export class TransactionService {
     }
 
     const vaultWestAmount = parseInt(vault.westAmount)
-    
+
     if (vaultWestAmount > 0) {
       const westTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
@@ -457,7 +457,7 @@ export class TransactionService {
     }
 
     const vaultRwaAmount = parseInt(vault.rwaAmount)
-    
+
     if (vaultRwaAmount > 0) {
       const rwaTransfer = this.weSdk.API.Transactions.Transfer.V3({
         recipient: address,
