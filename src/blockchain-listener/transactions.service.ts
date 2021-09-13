@@ -135,7 +135,7 @@ export class TransactionService {
 
         const writeLiquidationWestTransferCall = this.weSdk.API.Transactions.CallContract.V4({
           contractId: this.configService.envs.EAST_CONTRACT_ID,
-          contractVersion: 1,
+          contractVersion: this.configService.getEastContractVersion(),
           timestamp: Date.now(),
           params: [{
             type: 'string',
@@ -344,7 +344,7 @@ export class TransactionService {
 
     const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
       contractId: this.configService.envs.EAST_CONTRACT_ID,
-      contractVersion: 1,
+      contractVersion: this.configService.getEastContractVersion(),
       timestamp: Date.now(),
       params: [{
         type: 'string',
@@ -474,7 +474,7 @@ export class TransactionService {
 
     const closeCall = this.weSdk.API.Transactions.CallContract.V4({
       contractId: this.configService.envs.EAST_CONTRACT_ID,
-      contractVersion: 1,
+      contractVersion: this.configService.getEastContractVersion(),
       timestamp: Date.now(),
       params: [{
         type: 'string',
