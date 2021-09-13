@@ -19,9 +19,6 @@
 
   TX_LIFETIME - default: 600
 
-  Интервал для проверки вольтов для ликвидации(in ms):
-  LIQUIDATION_CHECK_INTERVAL - default 1000 * 60 * 5 (5 min)
-
   <b> posgres connection envs: </b>  
   POSTGRES_USER - default: 'postgres'  
   POSTGRES_PASSWORD - default: '123456'  
@@ -33,18 +30,19 @@
   
   <b>contract main envs:</b>  
   Публичный и приватный ключ создателя контракта:   
-  EAST_SERVICE_PUBLIC_KEY - default: '4qUrxWm53P3yCBikW96j8dNFBBxudbM3aaFfDPMUM8V1'  
-  EAST_SERVICE_PRIVATE_KEY - default: 'DRhyQvDKvaJeuMbhQR9gdyT8dMyoaHry23SifTNhN1qf'  
+  EAST_SERVICE_PUBLIC_KEY - default: ''  
+  EAST_SERVICE_PRIVATE_KEY - default: ''  
 
   Id созданного контракта:  
-  EAST_CONTRACT_ID - default: 'GCgS6gagq2s3bEFaYq9nUSZV3nfV4cjQFpmxPCiNzuJH'  
+  EAST_CONTRACT_ID - default: ''  
+  EAST_CONTRACT_VERSION - default: '1'
 
   Блок с которого начинается наблюдение - должен быть блоком создания контракта  
-  FIRST_BLOCK_SIGNATURE - default: '5dz...'  
+  FIRST_BLOCK_SIGNATURE - default: ''  
 
   Параметры конфига контракта (TODO брать его из блокчейна)  
-  RWA_TOKEN_ID - default: '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR'  
-  ORACLE_CONTRACT_ID - default: 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV'  
-  EAST_USDAP_PART - default: parseFloat(process.env.EAST_USDAP_PART) : 0.5  
+  RWA_TOKEN_ID - default: ''  
+  ORACLE_CONTRACT_ID - default: ''  
+  EAST_USDAP_PART - default: 0
   EAST_WEST_COLLATERAL - default: 2.5  
   LIQUIDATION_COLLATERAL - default: 1.3  

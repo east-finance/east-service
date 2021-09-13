@@ -43,6 +43,7 @@ const envs = {
   ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || '',
   // east contract id
   EAST_CONTRACT_ID: process.env.EAST_CONTRACT_ID as string || '',
+  EAST_CONTRACT_VERSION: process.env.EAST_CONTRACT_VERSION as string || '1',
   RWA_TOKEN_ID: process.env.RWA_TOKEN_ID as string || '',
   // oracle streams
   WEST_ORACLE_STREAM: '000003_latest',
@@ -151,5 +152,9 @@ export class ConfigService {
 
   getEastContractId () {
     return this.envs.EAST_CONTRACT_ID
+  }
+
+  getEastContractVersion () {
+    return Number(this.envs.EAST_CONTRACT_VERSION)
   }
 }
