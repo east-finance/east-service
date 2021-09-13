@@ -43,7 +43,7 @@
   FIRST_BLOCK_SIGNATURE - default: '5dz...'  
 
   Параметры конфига контракта (TODO брать его из блокчейна)  
-  USDAP_TOKEN_ID - default: '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR'  
+  RWA_TOKEN_ID - default: '6Cc3dePRVFwn4VX6NZuwS2R9wDHU6z2eoKhZ7MdJ1fkR'  
   ORACLE_CONTRACT_ID - default: 'Afnky7ZBdpXomouyFoCB59GFfWHHKd5rvapm8MyYn3dV'  
   EAST_USDAP_PART - default: parseFloat(process.env.EAST_USDAP_PART) : 0.5  
   EAST_WEST_COLLATERAL - default: 2.5  
