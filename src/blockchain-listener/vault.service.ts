@@ -41,7 +41,7 @@ export class VaultService {
     vaultId?: string
   }) {
     const isActive = typeof vault.isActive === 'boolean' ? vault.isActive : true
-    const oldVault = await this.userService.getCurrentVault(address)
+    const oldVault = await this.userService.getCurrentVault(address, sqlTx)
     // TODO make some actions
     await (sqlTx || this.knex)(Tables.VaultLog).insert({
       id: txId,
