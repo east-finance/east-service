@@ -284,7 +284,7 @@ export class TransactionService {
         this.configService.envs.WEST_ORACLE_STREAM
       ) as any
     } catch (err) {
-      throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${this.configService.envs.WEST_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
+      throw new Error(`ClaimOverpayInit handler error: can not get state from Oracles contract. Key - ${this.configService.envs.WEST_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
     }
     const westRate = JSON.parse(westRateKey.value)
 
@@ -295,7 +295,7 @@ export class TransactionService {
         this.configService.envs.RWA_ORACLE_STREAM
       ) as any
     } catch (err) {
-      throw new Error(`ClaimOverpayInit handler error: we sdk error, can not get state from contract. Key - ${this.configService.envs.RWA_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
+      throw new Error(`ClaimOverpayInit handler error: can not get state from Oracles contract. Key - ${this.configService.envs.RWA_ORACLE_STREAM}, contract id - ${this.configService.envs.ORACLE_CONTRACT_ID}.`)
     }
     const usdapRate = JSON.parse(usdapRateKey.value)
 
@@ -328,7 +328,7 @@ export class TransactionService {
         params: JSON.stringify(firstParam),
         error: `No WEST to return, westRate: ${westRate}`
       })
-      throw new Error(`ClaimOverpayInit handler error: no WEST to return, westRate: ${westRate}`)
+      Logger.log(`ClaimOverpayInit check failed: no WEST to return for address "${address}". Available free west: "${returnedAmount}", tx amount: "${firstParam.amount || '-'}", westRate: ${JSON.stringify(westRate)}`)
     }
 
     const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
