@@ -328,65 +328,65 @@ export class TransactionService {
         params: JSON.stringify(firstParam),
         error: `No WEST to return, westRate: ${westRate}`
       })
-      Logger.log(`ClaimOverpayInit check failed: no WEST to return for address "${address}". Available free west: "${returnedAmount}", tx amount: "${firstParam.amount || '-'}", westRate: ${JSON.stringify(westRate)}`)
+      Logger.log(`ClaimOverpayInit check failed: no WEST to return for address "${address}". Available free west: "${returnedAmount}", tx amount: "${firstParam.amount ? firstParam.amount * 100000000 : '-'}", westRate: ${JSON.stringify(westRate)}`)
+    } else {
+      const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
+        recipient: address,
+        assetId: '',
+        amount: returnedAmount,
+        timestamp: Date.now(),
+        attachment: call.tx.callContractTransaction.id,
+        atomicBadge: {
+          trustedSender: this.ownerAddress
+        }
+      })
+
+      const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
+        contractId: this.configService.envs.EAST_CONTRACT_ID,
+        contractVersion: this.configService.getEastContractVersion(),
+        timestamp: Date.now(),
+        params: [{
+          type: 'string',
+          key: TxTypes.claim_overpay,
+          value: JSON.stringify({
+            transferId: await overpayTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+            address,
+            requestId: call.tx.callContractTransaction.id
+          })
+        }],
+        atomicBadge: {
+          trustedSender: this.ownerAddress
+        }
+      })
+
+      const transactions = [overpayTransfer, overpayCall]
+
+      await this.weSdk.API.Transactions.broadcastAtomic(
+        this.weSdk.API.Transactions.Atomic.V1({transactions}),
+        this.configService.getKeyPair()
+      )
+
+      await sqlTx(Tables.UserTransactionStatuses).insert({
+        tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+        address,
+        status: ContractExecutionStatuses.Pending,
+        type: TxTypes.claim_overpay,
+        timestamp: new Date(),
+      })
+
+      await sqlTx(Tables.TransactionsLog).insert({
+        tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
+        address,
+        status: TxStatuses.Init,
+        type: TxTypes.claim_overpay_init,
+        request_tx_id: call.tx.callContractTransaction.id,
+        request_tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as number),
+        request_params: {},
+        height: block.height,
+        tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
+        params: JSON.stringify(firstParam),
+      })
     }
-
-    const overpayTransfer = this.weSdk.API.Transactions.Transfer.V3({
-      recipient: address,
-      assetId: '',
-      amount: returnedAmount,
-      timestamp: Date.now(),
-      attachment: call.tx.callContractTransaction.id,
-      atomicBadge: {
-        trustedSender: this.ownerAddress
-      }
-    })
-
-    const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
-      contractId: this.configService.envs.EAST_CONTRACT_ID,
-      contractVersion: this.configService.getEastContractVersion(),
-      timestamp: Date.now(),
-      params: [{
-        type: 'string',
-        key: TxTypes.claim_overpay,
-        value: JSON.stringify({
-          transferId: await overpayTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
-          address,
-          requestId: call.tx.callContractTransaction.id
-        })
-      }],
-      atomicBadge: {
-        trustedSender: this.ownerAddress
-      }
-    })
-
-    const transactions = [overpayTransfer, overpayCall]
-
-    await this.weSdk.API.Transactions.broadcastAtomic(
-      this.weSdk.API.Transactions.Atomic.V1({transactions}),
-      this.configService.getKeyPair()
-    )
-
-    await sqlTx(Tables.UserTransactionStatuses).insert({
-      tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
-      address,
-      status: ContractExecutionStatuses.Pending,
-      type: TxTypes.claim_overpay,
-      timestamp: new Date(),
-    })
-
-    await sqlTx(Tables.TransactionsLog).insert({
-      tx_id: await overpayCall.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
-      address,
-      status: TxStatuses.Init,
-      type: TxTypes.claim_overpay_init,
-      request_tx_id: call.tx.callContractTransaction.id,
-      request_tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as number),
-      request_params: {},
-      height: block.height,
-      tx_timestamp: new Date(call.tx.callContractTransaction.timestamp as string),
-      params: JSON.stringify(firstParam),
-    })
   }
 
   async close(sqlTx: Knex.Transaction<any, any[]>, firstParam: any, call: ParsedIncomingFullGrpcTxType['executedContractTransaction'], block: NodeBlock) {
