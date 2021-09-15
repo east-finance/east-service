@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { DB_CON_TOKEN, Tables } from '../common/constants'
