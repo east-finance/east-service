@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '../config/config.service'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { DB_CON_TOKEN, Tables } from '../common/constants'
@@ -56,16 +56,30 @@ export class PersistService {
         && result.key !== this.configService.envs.WEST_ORACLE_STREAM) {
         continue
       }
-      const { value, timestamp } = JSON.parse(result.value)
-      await tx(Tables.Oracles).insert({
-        tx_id: incomingTx.id,
-        height: block.height,
-        tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
-        executed_timestamp: new Date(incomingTx.timestamp as any),
-        timestamp: new Date(parseInt(timestamp)),
-        value,
-        stream_id: result.key
-      })
+      let parsedOracles = null
+      try {
+        parsedOracles = JSON.parse(result.value)
+        if (!(parsedOracles && parsedOracles.value && parsedOracles.timestamp)) {
+          parsedOracles = null
+          throw new Error('Wrong oracles format')
+        }
+      } catch (e) {
+        Logger.error(`Error: cannot parse incoming Oracle value: ${result.value}: ${e.message}`)
+      }
+
+      if (parsedOracles) {
+        const { value, timestamp } = parsedOracles
+        Logger.log(`Update oracles: streamId - "${result.key}", value - "${result.value}"`)
+        await tx(Tables.Oracles).insert({
+          tx_id: incomingTx.id,
+          height: block.height,
+          tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
+          executed_timestamp: new Date(incomingTx.timestamp as any),
+          timestamp: new Date(parseInt(timestamp)),
+          value,
+          stream_id: result.key
+        })
+      }
     }
   }
 
@@ -82,7 +96,7 @@ export class PersistService {
   rollbackLastBlock = async () => {
     await this.knex(Tables.Blocks)
       .delete()
-      .where('height', 'in', 
+      .where('height', 'in',
         this.knex(Tables.Blocks)
           .select('height')
           .orderBy('height', 'DESC')
