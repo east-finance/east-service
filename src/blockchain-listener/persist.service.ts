@@ -69,6 +69,7 @@ export class PersistService {
 
       if (parsedOracles) {
         const { value, timestamp } = parsedOracles
+        Logger.log(`Update oracles: streamId - "${result.key}", value - "${result.value}"`)
         await tx(Tables.Oracles).insert({
           tx_id: incomingTx.id,
           height: block.height,
