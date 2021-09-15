@@ -56,29 +56,25 @@ export class PersistService {
         && result.key !== this.configService.envs.WEST_ORACLE_STREAM) {
         continue
       }
-      let parsedOracles = null
+      const validateNumeric = (value: string) => value && parseFloat(value).toString() === value
       try {
-        parsedOracles = JSON.parse(result.value)
-        if (!(parsedOracles && parsedOracles.value && parsedOracles.timestamp)) {
-          parsedOracles = null
+        const { value, timestamp } = JSON.parse(result.value)
+        if (!(validateNumeric(value) && validateNumeric(timestamp))) {
           throw new Error('Wrong oracles format')
+        } else {
+          await tx(Tables.Oracles).insert({
+            tx_id: incomingTx.id,
+            height: block.height,
+            tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
+            executed_timestamp: new Date(incomingTx.timestamp as any),
+            timestamp: new Date(parseInt(timestamp)),
+            value,
+            stream_id: result.key
+          })
+          Logger.log(`Oracle value successfully updated: streamId - "${result.key}", value - "${result.value}"`)
         }
       } catch (e) {
-        Logger.error(`Error: cannot parse incoming Oracle value: ${result.value}: ${e.message}`)
-      }
-
-      if (parsedOracles) {
-        const { value, timestamp } = parsedOracles
-        Logger.log(`Update oracles: streamId - "${result.key}", value - "${result.value}"`)
-        await tx(Tables.Oracles).insert({
-          tx_id: incomingTx.id,
-          height: block.height,
-          tx_timestamp: new Date(incomingTx.tx.callContractTransaction.timestamp as any),
-          executed_timestamp: new Date(incomingTx.timestamp as any),
-          timestamp: new Date(parseInt(timestamp)),
-          value,
-          stream_id: result.key
-        })
+        Logger.error(`Error: cannot proceed incoming oracle contract call: "${result.value}", message: "${e.message}"`)
       }
     }
   }
