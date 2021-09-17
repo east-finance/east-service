@@ -1,6 +1,6 @@
 {
   "name": "east-service",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,7 @@
     "@nestjs/passport": "7.1.5",
     "@nestjs/platform-express": "^7.6.15",
     "@nestjs/swagger": "^4.8.0",
+    "@nestjs/throttler": "^2.0.0",
     "@types/jest": "^26.0.22",
     "@types/uuid": "^8.3.0",
     "@wavesenterprise/grpc-listener": "^0.1.1",

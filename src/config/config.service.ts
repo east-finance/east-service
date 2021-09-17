@@ -55,6 +55,8 @@ const envs = {
 
   LIQUIDATION_CHECK_INTERVAL: process.env.LIQUIDATION_CHECK_INTERVAL ? parseInt(process.env.LIQUIDATION_CHECK_INTERVAL) : 1000 * 60 * 5,
   TX_LIFETIME: process.env.TX_LIFETIME ? Number(process.env.TX_LIFETIME) : 600,
+  THROTTLE_TTL: process.env.THROTTLE_TTL ? Number(process.env.THROTTLE_TTL) : 60,
+  THROTTLE_LIMIT: process.env.THROTTLE_LIMIT ? Number(process.env.THROTTLE_LIMIT) : 120,
 }
 
 export class ConfigService {
@@ -156,5 +158,12 @@ export class ConfigService {
 
   getEastContractVersion () {
     return Number(this.envs.EAST_CONTRACT_VERSION)
+  }
+
+  getThrottleParams () {
+    return {
+      ttl: this.envs.THROTTLE_TTL,
+      limit: this.envs.THROTTLE_LIMIT
+    };
   }
 }
