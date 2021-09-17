@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common'
+import { SkipThrottle } from '@nestjs/throttler'
 import { ApiOperation, ApiResponse, ApiTags, ApiOkResponse } from '@nestjs/swagger'
 import { ConfigService } from '../config/config.service'
 
+@SkipThrottle()
 @ApiTags('service')
 @Controller()
 export class AppController {
