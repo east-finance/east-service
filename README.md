@@ -1,9 +1,11 @@
 # EAST service
 
-## Архитектура
+## Architecture
 
-### База данных
-Сущности транзакций, балансов, vaults и прочее хранятся не в виде сущностей а в виде журнала где на каждое изменение вставляется новая запись. Для того чтобы узнать актуальный баланс,транзакцию или значение vault нужно взять последнюю запись. При роллбеке удаляются только блоки, все записи в журналах удаляются автоматически через DELETE CASCADE получая при этом новое состояние для сущностей, таким образом отпадает необходимость вручную обрабатывать роллбэки.
+### Database
+Transactions, balances, vaults are stored not as objects, but as journals, where a new entry is created for any change. You need to check the last entry to get the actual balance, vault value or the last transaction.
+
+Rollback will delete only blocks, while all the journal entries delete automatically with DELETE CASCADE and get new object states, so you don't need to process rollbacks manually.
 
 
 ## ENV variables:
