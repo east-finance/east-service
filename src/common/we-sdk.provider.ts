@@ -1,10 +1,11 @@
-import { create, MAINNET_CONFIG } from '@wavesenterprise/js-sdk'
+import { create, MAINNET_CONFIG, IWeSdkCtr } from '@wavesenterprise/js-sdk'
 import { ConfigService } from '../config/config.service'
 import { WE_SDK_PROVIDER_TOKEN } from './constants'
 import { GrpcListener } from '@wavesenterprise/grpc-listener'
 import { Logger } from '@nestjs/common'
 import { ApiTokenRefresher } from '@wavesenterprise/api-token-refresher'
 import axios from 'axios'
+import { getOAuthTokens } from './oauth';
 
 export const WeSdkFactory = {
   provide: WE_SDK_PROVIDER_TOKEN,
@@ -31,36 +32,7 @@ export const WeSdkFactory = {
 
     listener.cancel()
 
-    const getTokens = async () => {
-      const { data } = await axios.post(`${configService.envs.AUTH_URL}/v1/auth/token`, { },
-        {
-          headers: {
-            Authorization: `bearer ${configService.envs.SERVICE_TOKEN}`
-          }
-        })
-      return data
-    }
-
-    const refreshCallback = async (token: string) => {
-      try {
-        const { data } = await axios.post(`${configService.envs.AUTH_URL}/v1/auth/refresh`, { token })
-        console.log('Auth tokens successfully refreshed')
-        return data
-      } catch (e) {
-        console.log('Refresh failed, relogin with service token')
-        return getTokens()
-      }
-    }
-
-    const tokens = await getTokens()
-
-    const apiTokenRefresher = new ApiTokenRefresher({
-      authorization: tokens,
-      refreshCallback,
-    })
-    const { fetch: fetchInstance } = apiTokenRefresher.init()
-
-    return create({
+    const jsSDKConfig: IWeSdkCtr = {
       initialConfiguration: {
         ...MAINNET_CONFIG,
         nodeAddress: configService.envs.NODE_ADDRESS,
@@ -68,9 +40,36 @@ export const WeSdkFactory = {
         networkByte: wavesConfig.chainId,
         minimumFee,
         grpcAddress: configService.getGrpcAddresses()[0]
-      },
-      fetchInstance
-    })
+      }
+    }
+
+    if (configService.envs.SERVICE_TOKEN) {
+      const refreshCallback = async (token: string) => {
+        try {
+          const { data } = await axios.post(`${configService.envs.AUTH_URL}/v1/auth/refresh`, { token })
+          Logger.log('Auth tokens successfully refreshed')
+          return data
+        } catch (e) {
+          Logger.log('Refresh failed, relogin with service token')
+          return getOAuthTokens(configService.envs.AUTH_URL, configService.envs.SERVICE_TOKEN as string)
+        }
+      }
+
+      try {
+        const tokens = await getOAuthTokens(configService.envs.AUTH_URL, configService.envs.SERVICE_TOKEN)
+        const apiTokenRefresher = new ApiTokenRefresher({
+          authorization: tokens,
+          refreshCallback,
+        })
+        const { fetch: fetchInstance } = apiTokenRefresher.init()
+        jsSDKConfig.fetchInstance = fetchInstance
+      } catch (e) {
+        Logger.error(`Cannot create WE JsSDK instance: '${e.message}', exit`)
+        process.exit(1)
+      }
+    }
+
+    return create(jsSDKConfig)
   },
   inject: [ConfigService],
 }
