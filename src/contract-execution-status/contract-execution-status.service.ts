@@ -5,15 +5,13 @@ import { ContractExecutionRequest, ContractExecutionResponse } from '@wavesenter
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
 import { ContractExecutionStatuses, DB_CON_TOKEN, Tables, WE_SDK_PROVIDER_TOKEN } from '../common/constants';
-import { from, Observable, timer } from 'rxjs';
 import { Knex } from 'knex';
-import { exhaustMap, mergeMap } from 'rxjs/operators';
 import { getOAuthTokens } from '../common/oauth';
 
-const PENDING_CALLS_LIMIT = 100;
+const PENDING_CALLS_LIMIT = 30;
 const SECONDS_POLL_INTERVAL = 30;
 const PENDING_CALLS_LOWER_LIMIT_IN_MINUTES = 10;
-const ACCESS_TOKEN_UPDATE_INTERVAL = 30 * 1000;
+const ACCESS_TOKEN_UPDATE_INTERVAL = 15 * 1000;
 
 @Injectable()
 export class ContracExecutiontStatusService implements OnModuleInit {
@@ -29,36 +27,48 @@ export class ContracExecutiontStatusService implements OnModuleInit {
 
   async onModuleInit() {
     this.contractStatusServiceClient = await this.createContractStatusServiceClient();
-    timer(0, 1000 * SECONDS_POLL_INTERVAL)
-      .pipe(
-        exhaustMap(
-          _counter => this.getPendingCalls()
-            .pipe(
-              mergeMap(calls => from(calls)),
-              mergeMap(call => this.getContractExecutionStatus(call.txId, from(this.getContractStatusRequestMetadata()))),
-              mergeMap(statusResponse => {
-                let status, error
-                switch (statusResponse.status) {
-                  case 0:
-                    status = ContractExecutionStatuses.Success
-                    break;
-                  case 1:
-                    status = ContractExecutionStatuses.Fail
-                    error = statusResponse.message;
-                    break;
-                  case 2:
-                    status = ContractExecutionStatuses.Fail
-                    error = statusResponse.message;
-                    break;
-                }
-                return this.updateStatus(statusResponse.txId as string, status, error)
-              })
-            )
-        )
-      )
-      .subscribe(data => {
-        console.log('Subscribed to data', data, typeof this.getContractStatusRequestMetadata)
-      })
+
+    const updateStatuses = async () => {
+      try {
+        const pendingCalls = await this.getPendingCalls()
+        const metadata = await this.getContractStatusRequestMetadata()
+        const promises = pendingCalls.map(call => {
+          return new Promise((resolve) => {
+            return this.getContractExecutionStatus(call.txId, metadata, resolve)
+          })
+        })
+        const statuses: any[] = await Promise.all(promises)
+        // tslint:disable-next-line:prefer-for-of
+        for (let i = 0; i< statuses.length; i++) {
+          const statusResponse = statuses[i]
+          let contractStatus
+          let error
+          switch (statusResponse.status) {
+            case 0:
+              contractStatus = ContractExecutionStatuses.Success
+              break
+            case 1:
+              contractStatus = ContractExecutionStatuses.Fail
+              error = statusResponse.message
+              break
+            case 2:
+              contractStatus = ContractExecutionStatuses.Fail
+              error = statusResponse.message
+              break
+            default:
+              contractStatus = ContractExecutionStatuses.Fail
+              break
+          }
+          await this.updateStatus(statusResponse.txId as string, contractStatus, error)
+        }
+      } catch (e) {
+        Logger.log(`Error on processing tx statuses: '${e.message}'`)
+      }
+    }
+
+    updateStatuses()
+
+    setInterval(updateStatuses, 1000 * SECONDS_POLL_INTERVAL)
   }
 
   private async createContractStatusServiceClient(): Promise<ContractStatusServiceClient> {
@@ -85,29 +95,25 @@ export class ContracExecutiontStatusService implements OnModuleInit {
     })
   }
 
-  private updateStatus(txId: string, status: ContractExecutionStatuses, error?: string): Observable<number> {
-    return from(
-      this.knex(Tables.UserTransactionStatuses)
+  private updateStatus(txId: string, status: ContractExecutionStatuses, error?: string): Promise<number> {
+      return this.knex(Tables.UserTransactionStatuses)
         .where('tx_id', '=', txId)
         .update({
           status,
           error,
         }) as Promise<number>
-    )
   }
 
-  private getPendingCalls(): Observable<{ txId: string }[]> {
-    return from(
-      this.knex(Tables.UserTransactionStatuses)
-        .select({
-          txId: `${Tables.UserTransactionStatuses}.tx_id`
-        })
-        .where({
-          status: ContractExecutionStatuses.Pending
-        })
-        .andWhere('timestamp', '>', (new Date(Date.now() - 1000 * 60 * PENDING_CALLS_LOWER_LIMIT_IN_MINUTES)).toISOString())
-        .limit(PENDING_CALLS_LIMIT)
-    )
+  private getPendingCalls(): Promise<Array<{txId: string}>> {
+    return this.knex(Tables.UserTransactionStatuses)
+      .select({
+        txId: `${Tables.UserTransactionStatuses}.tx_id`
+      })
+      .where({
+        status: ContractExecutionStatuses.Pending
+      })
+      .andWhere('timestamp', '>', (new Date(Date.now() - 1000 * 60 * PENDING_CALLS_LOWER_LIMIT_IN_MINUTES)).toISOString())
+      .limit(PENDING_CALLS_LIMIT)
   }
 
   private async getContractStatusRequestMetadata () {
@@ -125,14 +131,13 @@ export class ContracExecutiontStatusService implements OnModuleInit {
     return metadata
   }
 
-  private getContractExecutionStatus(txId: string, metadata: any): Observable<ContractExecutionResponse.AsObject> {
-    return new Observable(subscriber => {
-      const request = new ContractExecutionRequest()
+  private getContractExecutionStatus(txId: string, metadata: any, resolve: any): any {
       try {
+        const request = new ContractExecutionRequest()
         request.setTxId(this.weSdk.tools.base58.decode(txId))
         const connection = this.contractStatusServiceClient.contractExecutionStatuses(
           request,
-          metadata // new grpc.Metadata(),
+          metadata
         )
         connection.on('data', (data: ContractExecutionResponse) => {
           const _data = data.toObject()
@@ -144,9 +149,8 @@ export class ContracExecutiontStatusService implements OnModuleInit {
             signature: this.weSdk.tools.base58.encode(data.getSignature_asU8()),
             txId: this.weSdk.tools.base58.encode(data.getTxId_asU8()),
           }
-          subscriber.next(__data)
-          subscriber.complete()
           Logger.log(`Get contract execution status from node: ${JSON.stringify(__data)}`)
+          resolve(__data)
         });
         connection.on('close', () => {
           Logger.log('Connection stream closed');
@@ -156,7 +160,6 @@ export class ContracExecutiontStatusService implements OnModuleInit {
         });
         connection.on('error', (error) => {
           Logger.error(`Connection stream error: ${error.message}`);
-          subscriber.complete()
         });
         connection.on('readable', () => {
           Logger.log('Connection stream readable');
@@ -171,8 +174,6 @@ export class ContracExecutiontStatusService implements OnModuleInit {
         Logger.log('Connection created');
       } catch (e) {
         Logger.error(`Cannot create txId '${txId}' status request: '${JSON.stringify(e)}'`)
-        subscriber.complete()
       }
-    })
   }
 }
