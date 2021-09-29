@@ -21,7 +21,7 @@ import { parseVault } from '../common/parse-vault'
 @Injectable()
 export class TransactionService {
   ownerAddress: string
-  closeFee = 30000000
+  closeFee = 20000000
 
   constructor (
     private readonly configService: ConfigService,
