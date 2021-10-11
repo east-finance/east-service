@@ -10,7 +10,7 @@ import {
   WE_SDK_PROVIDER_TOKEN,
   ContractExecutionStatuses
 } from '../common/constants'
-import { ParsedIncomingFullGrpcTxType, WeSdk } from '@wavesenterprise/js-sdk'
+import { ParsedIncomingFullGrpcTxType, WeSdk, libs as jsSdkLibs } from '@wavesenterprise/js-sdk'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
@@ -341,6 +341,7 @@ export class TransactionService {
         }
       })
 
+      const requestId = jsSdkLibs.base58.encode(jsSdkLibs.converters.stringToByteArray(call.tx.callContractTransaction.id))
       const overpayCall = this.weSdk.API.Transactions.CallContract.V4({
         contractId: this.configService.envs.EAST_CONTRACT_ID,
         contractVersion: this.configService.getEastContractVersion(),
@@ -351,7 +352,7 @@ export class TransactionService {
           value: JSON.stringify({
             transferId: await overpayTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
             address,
-            requestId: call.tx.callContractTransaction.id
+            requestId
           })
         }],
         atomicBadge: {
