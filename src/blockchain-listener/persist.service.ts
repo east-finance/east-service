@@ -83,8 +83,6 @@ export class PersistService {
     const [ lastBlock ] = await this.knex(Tables.Blocks).select('*').orderBy('height', 'DESC').limit(1)
     if (lastBlock) {
       return lastBlock.signature
-    } else if (this.configService.envs.FIRST_BLOCK_SIGNATURE) {
-      return this.configService.envs.FIRST_BLOCK_SIGNATURE
     }
     return null as any
   }

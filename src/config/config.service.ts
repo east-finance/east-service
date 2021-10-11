@@ -37,8 +37,6 @@ const envs = {
   PUBLIC_KEY,
 
   // PROCESS ENVS:
-  // если база пустая - подпись первого блока с которого начинать парсить блокчейн
-  FIRST_BLOCK_SIGNATURE: process.env.FIRST_BLOCK_SIGNATURE || '',
   // oracle contract id
   ORACLE_CONTRACT_ID: process.env.ORACLE_CONTRACT_ID as string || '',
   // east contract id
@@ -164,6 +162,6 @@ export class ConfigService {
     return {
       ttl: this.envs.THROTTLE_TTL,
       limit: this.envs.THROTTLE_LIMIT
-    };
+    }
   }
 }
