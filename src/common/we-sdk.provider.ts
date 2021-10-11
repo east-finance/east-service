@@ -5,7 +5,7 @@ import { GrpcListener } from '@wavesenterprise/grpc-listener'
 import { Logger } from '@nestjs/common'
 import { ApiTokenRefresher } from '@wavesenterprise/api-token-refresher'
 import axios from 'axios'
-import { getOAuthTokens } from './oauth';
+import { getOAuthTokens } from './oauth'
 
 export const WeSdkFactory = {
   provide: WE_SDK_PROVIDER_TOKEN,
@@ -64,7 +64,7 @@ export const WeSdkFactory = {
         const { fetch: fetchInstance } = apiTokenRefresher.init()
         jsSDKConfig.fetchInstance = fetchInstance
       } catch (e) {
-        Logger.error(`Cannot create WE JsSDK instance: '${e.message}', exit`)
+        Logger.error(`Cannot create WE JsSDK instance: '${e.message}'. Check that 'SERVICE_TOKEN' env variable is correct. Exit`)
         process.exit(1)
       }
     }

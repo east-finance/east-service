@@ -38,8 +38,6 @@ EAST_SERVICE_PUBLIC_KEY=
 EAST_SERVICE_PRIVATE_KEY=
 # ID of created EAST contract:  
 EAST_CONTRACT_ID=
-# The block with which the observation begins - should be the block of contract creation  
-FIRST_BLOCK_SIGNATURE=
 # EAST contract version; By default = 1, should be increased after contract update
 EAST_CONTRACT_VERSION=1
 
