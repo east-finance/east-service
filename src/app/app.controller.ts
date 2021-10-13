@@ -36,7 +36,8 @@ export class AppController {
   @ApiOkResponse({ type: String })
   config() {
     return {
-      eastContractId: this.configService.getEastContractId()
+      eastContractId: this.configService.getEastContractId(),
+      eastContractVersion: this.configService.getEastContractVersion()
     }
   }
 }
