@@ -10,7 +10,7 @@ import {
   WE_SDK_PROVIDER_TOKEN,
   ContractExecutionStatuses
 } from '../common/constants'
-import { ParsedIncomingFullGrpcTxType, WeSdk } from '@wavesenterprise/js-sdk'
+import { ParsedIncomingFullGrpcTxType, WeSdk, libs as jsSdkLibs } from '@wavesenterprise/js-sdk'
 import { NodeBlock } from '@wavesenterprise/grpc-listener'
 import { Knex } from 'knex'
 import { VaultService } from './vault.service'
@@ -21,7 +21,7 @@ import { parseVault } from '../common/parse-vault'
 @Injectable()
 export class TransactionService {
   ownerAddress: string
-  closeFee = 30000000
+  closeFee = 20000000
 
   constructor (
     private readonly configService: ConfigService,
@@ -314,6 +314,9 @@ export class TransactionService {
     }
     returnedAmount = Math.round(returnedAmount * 100000000)
 
+    // Encode base58 twice to correct view in client
+    const requestId = jsSdkLibs.base58.encode(jsSdkLibs.converters.stringToByteArray(call.tx.callContractTransaction.id))
+
     if (returnedAmount <= 0) {
       await sqlTx(Tables.TransactionsLog).insert({
         tx_id: call.tx.callContractTransaction.id,
@@ -335,7 +338,7 @@ export class TransactionService {
         assetId: '',
         amount: returnedAmount,
         timestamp: Date.now(),
-        attachment: call.tx.callContractTransaction.id,
+        attachment: requestId,
         atomicBadge: {
           trustedSender: this.ownerAddress
         }
@@ -351,7 +354,7 @@ export class TransactionService {
           value: JSON.stringify({
             transferId: await overpayTransfer.getId(this.configService.envs.EAST_SERVICE_PUBLIC_KEY),
             address,
-            requestId: call.tx.callContractTransaction.id
+            requestId
           })
         }],
         atomicBadge: {

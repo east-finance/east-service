@@ -32,7 +32,7 @@ export class BlockchainListenerService {
       },
       auth: configService.getAuthOptions(),
       asyncGrpc: false,
-      getLastBlocksSignature: this.persistService.getLastBlocksSignature,
+      getLastBlocksSignature: this.getLastBlockSignature,
       filters: {
         tx_types: [ 105, TRANSACTION_TYPES.Transfer, TRANSACTION_TYPES.Atomic ]
       },
@@ -50,6 +50,24 @@ export class BlockchainListenerService {
       receiveTxs: this.receiveTxs,
       receiveCriticalError: this.receiveError
     })
+  }
+
+  getLastBlockSignature = async () => {
+    const dbSignature = await this.persistService.getLastBlocksSignature()
+    if (dbSignature) {
+      Logger.log(`Using start block signature from DB: '${dbSignature}'`)
+      return dbSignature
+    }
+    try {
+      const eastCreateTx = await this.weSdk.API.Node.transactions.get(this.configService.envs.EAST_CONTRACT_ID)
+      const block: any = await this.weSdk.API.Node.blocks.at(eastCreateTx.height)
+      const blockSignature = block.reference
+      Logger.log(`Using start block signature from Node: '${blockSignature}'`)
+      return blockSignature
+    } catch (e) {
+      Logger.error(`Cannot get EAST contract ('${this.configService.envs.EAST_CONTRACT_ID}') block signature: ${e.message}. Check that the EAST DockerCreate transaction is already in the blockchain.`)
+    }
+    process.exit(1)
   }
 
   receiveTxs = async (block: NodeBlock, txs: ParsedIncomingGrpcTxType[]) => {
